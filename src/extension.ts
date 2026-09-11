@@ -17,6 +17,16 @@ async function fileExists(uri: vscode.Uri): Promise<boolean> {
   }
 }
 
+function pluralize(count: number, singular: string): string {
+  return `${count} ${singular}${count === 1 ? "" : "s"}`;
+}
+
+/** Always renders all four counts (even when zero) so the status row's length — and therefore the tree's
+ * vertical offset — stays consistent between refreshes instead of jumping. */
+function formatStatusMessage(docCount: number, missingCount: number, brokenLinks: number, orphans: number): string {
+  return `${pluralize(docCount, "doc")} · ${missingCount} missing · ${pluralize(brokenLinks, "broken link")} · ${pluralize(orphans, "orphan")}`;
+}
+
 export function activate(context: vscode.ExtensionContext): void {
   const treeProvider = new DocsTreeProvider();
   const diagnostics = vscode.languages.createDiagnosticCollection("specmesh");
@@ -37,11 +47,11 @@ export function activate(context: vscode.ExtensionContext): void {
     }
     treeProvider.setConfigExistsMap(configExists);
 
-    treeView.message = undefined;
-
     const brokenLinks = problems.filter((p) => p.kind === "broken-link").length;
     const orphans = problems.filter((p) => p.kind === "orphan").length;
     const missing = missingProblems.length;
+    treeView.message = formatStatusMessage(nodes.length, missing, brokenLinks, orphans);
+
     outputChannel.appendLine(
       `specmesh: indexed ${nodes.length} docs, ${brokenLinks} broken link(s), ${orphans} orphan(s), ${missing} missing tracked file(s).`
     );
