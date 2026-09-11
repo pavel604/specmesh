@@ -66,6 +66,7 @@ function buildSpecmeshYml(isRoot: boolean): string {
   const track: DocTypeDefinition[] = isRoot
     ? [
         { type: "mission", label: "Mission", glob: "docs/mission.md" },
+        { type: "sdd", label: "Spec-Driven Development", glob: "docs/spec-driven-development.md" },
         { type: "epic", label: "Epics", glob: "docs/epics/EPIC-*.md" },
         ...getBuiltinDefaultDocTypes(),
       ]
