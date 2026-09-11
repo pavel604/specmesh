@@ -2,7 +2,7 @@
   "name": "specmesh",
   "displayName": "specmesh",
   "description": "Cross-repo documentation graph for the agentic spec-driven development lifecycle: indexes mission/epic/FR/ADR/reference/instructions/skill docs across every open workspace folder (mission/epic opt-in per repo), flags broken cross-repo links, orphaned docs, and missing tracked files.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "specmesh",
   "license": "MIT",
   "private": true,
