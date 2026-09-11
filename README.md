@@ -48,10 +48,16 @@ thing that's missing:
    tree immediately, mission/epic included) — never overwriting anything that already exists.
 4. Already have docs but in a different shape, or want to track/exclude something specific? Edit that
    repo's `.specmesh.yml` (auto-created by step 3, or add your own) — see "Per-repo config" below. Changes
-   are picked up automatically, no reload needed.
-5. Other useful commands: **specmesh: Refresh Docs Index**, **specmesh: Show Orphaned Docs**,
+   are picked up automatically, no reload needed. Every repo's node in the tree also has its own pinned
+   `.specmesh.yml` entry — click it to open the file (or create one, seeded with specmesh's defaults, if it
+   doesn't exist yet).
+5. Want to start a new tracked doc (ADR, reference, etc.) without leaving the tree? Use the **Add new…**
+   inline button on a repo's node — it quick-picks a doc type, asks for a title, and writes the file at the
+   right path (deriving the next number for numbered types like ADRs). Right-click any doc entry for a
+   **Delete Doc** action (moves it to the OS trash, with a confirmation first).
+6. Other useful commands: **specmesh: Refresh Docs Index**, **specmesh: Show Orphaned Docs**,
    **specmesh: Show Missing Tracked Files**.
-6. Fill out `docs/mission.md` in the root repo (Problem / Approach / Who this is for / Non-goals), then
+7. Fill out `docs/mission.md` in the root repo (Problem / Approach / Who this is for / Non-goals), then
    start building features from Copilot Chat with the scaffolded `new-feature`/`change-request` skills
    (e.g. `/new-feature <user story>`).
 
@@ -76,6 +82,8 @@ would show a false "missing" entry.
   filename as secondary text — the default).
 - A doc with one or more broken outgoing links gets a yellow warning icon.
 - A `track` entry that doesn't resolve to any file shows as a red "missing" leaf under its category.
+- Every repo's node has a pinned `.specmesh.yml` entry (before its doc-type categories) — click to open it,
+  or to create one if it doesn't exist yet — and an inline **Add new…** button to scaffold a new tracked doc.
 - Git's own modified/added decorations apply automatically (see above) — nothing specmesh-specific to
   configure for that.
 

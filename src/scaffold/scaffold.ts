@@ -62,7 +62,7 @@ async function pickRoot(
 }
 
 /** `track:` list for a repo's generated `.specmesh.yml` -- root also gets mission/epic, since those live there. */
-function buildSpecmeshYml(isRoot: boolean): string {
+export function buildSpecmeshYml(isRoot: boolean): string {
   const track: DocTypeDefinition[] = isRoot
     ? [
         { type: "mission", label: "Mission", glob: "docs/mission.md" },

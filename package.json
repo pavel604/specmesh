@@ -199,8 +199,36 @@
       {
         "command": "specmesh.scaffoldSdlc",
         "title": "specmesh: Scaffold Spec-Driven Development Structure"
+      },
+      {
+        "command": "specmesh.openOrCreateConfig",
+        "title": "specmesh: Open or Create .specmesh.yml"
+      },
+      {
+        "command": "specmesh.addNewDoc",
+        "title": "specmesh: Add New Doc\u2026",
+        "icon": "$(add)"
+      },
+      {
+        "command": "specmesh.deleteDoc",
+        "title": "specmesh: Delete Doc",
+        "icon": "$(trash)"
       }
     ],
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "specmesh.addNewDoc",
+          "when": "view == specmesh.docsExplorer && viewItem == folder",
+          "group": "inline"
+        },
+        {
+          "command": "specmesh.deleteDoc",
+          "when": "view == specmesh.docsExplorer && viewItem == doc",
+          "group": "7_modification"
+        }
+      ]
+    },
     "configuration": {
       "title": "specmesh",
       "properties": {

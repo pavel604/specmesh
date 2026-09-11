@@ -4,7 +4,18 @@ import { computeProblems } from "./crawler/graph";
 import { DocsTreeProvider } from "./views/docsTreeProvider";
 import { applyDiagnostics } from "./views/diagnostics";
 import { scaffoldSdlc } from "./scaffold/scaffold";
+import { openOrCreateConfig, addNewDoc } from "./scaffold/newDoc";
 import { registerSpecmeshTools } from "./tools/specmeshTools";
+import { DocNode } from "./model/types";
+
+async function fileExists(uri: vscode.Uri): Promise<boolean> {
+  try {
+    await vscode.workspace.fs.stat(uri);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export function activate(context: vscode.ExtensionContext): void {
   const treeProvider = new DocsTreeProvider();
@@ -19,6 +30,13 @@ export function activate(context: vscode.ExtensionContext): void {
     const problems = [...computeProblems(nodes), ...missingProblems];
     treeProvider.update(nodes, problems);
     applyDiagnostics(diagnostics, problems);
+
+    const configExists = new Map<string, boolean>();
+    for (const folder of vscode.workspace.workspaceFolders ?? []) {
+      configExists.set(folder.name, await fileExists(vscode.Uri.joinPath(folder.uri, ".specmesh.yml")));
+    }
+    treeProvider.setConfigExistsMap(configExists);
+
     treeView.message = undefined;
 
     const brokenLinks = problems.filter((p) => p.kind === "broken-link").length;
@@ -80,6 +98,27 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand("specmesh.scaffoldSdlc", async () => {
       await scaffoldSdlc(context, outputChannel);
+      await refresh();
+    }),
+    vscode.commands.registerCommand("specmesh.openOrCreateConfig", async (folderName: string) => {
+      await openOrCreateConfig(folderName);
+      await refresh();
+    }),
+    vscode.commands.registerCommand("specmesh.addNewDoc", async (item: { folderName: string }) => {
+      await addNewDoc(item.folderName);
+      await refresh();
+    }),
+    vscode.commands.registerCommand("specmesh.deleteDoc", async (item: { node: DocNode }) => {
+      const node = item.node;
+      const confirm = await vscode.window.showWarningMessage(
+        `Delete "${node.relativePath}" (${node.workspaceFolderName})?`,
+        { modal: true },
+        "Delete"
+      );
+      if (confirm !== "Delete") {
+        return;
+      }
+      await vscode.workspace.fs.delete(vscode.Uri.file(node.absolutePath), { useTrash: true });
       await refresh();
     }),
     ...registerSpecmeshTools(context, refresh)

@@ -19,6 +19,7 @@ function iconForDoc(type: string, fileName: string): string {
 type TreeItemData =
   | { kind: "loading" }
   | { kind: "folder"; folderName: string }
+  | { kind: "config"; folderName: string; exists: boolean }
   | { kind: "category"; folderName: string; type: string; label: string }
   | { kind: "doc"; node: DocNode }
   | { kind: "missing"; problem: Problem };
@@ -31,6 +32,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
   private missing: Problem[] = [];
   private brokenLinkCounts = new Map<string, number>();
   private loading = true;
+  private configExists = new Map<string, boolean>();
 
   update(nodes: DocNode[], problems: Problem[]): void {
     this.loading = false;
@@ -42,6 +44,13 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
         this.brokenLinkCounts.set(problem.absolutePath, (this.brokenLinkCounts.get(problem.absolutePath) ?? 0) + 1);
       }
     }
+    this._onDidChangeTreeData.fire();
+  }
+
+  /** Tracked per folder so the pinned config node can render its exists/not-created state without an async
+   * filesystem check on every tree render. */
+  setConfigExistsMap(configExists: Map<string, boolean>): void {
+    this.configExists = configExists;
     this._onDidChangeTreeData.fire();
   }
 
@@ -64,6 +73,27 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
     if (element.kind === "folder") {
       const item = new vscode.TreeItem(element.folderName, vscode.TreeItemCollapsibleState.Expanded);
       item.iconPath = new vscode.ThemeIcon("repo");
+      item.contextValue = "folder";
+      return item;
+    }
+
+    if (element.kind === "config") {
+      const item = new vscode.TreeItem(".specmesh.yml", vscode.TreeItemCollapsibleState.None);
+      const folder = vscode.workspace.workspaceFolders?.find((f) => f.name === element.folderName);
+      if (element.exists && folder) {
+        item.resourceUri = vscode.Uri.joinPath(folder.uri, ".specmesh.yml");
+        item.tooltip = "Open .specmesh.yml";
+        item.iconPath = new vscode.ThemeIcon("gear");
+      } else {
+        item.description = "not created";
+        item.tooltip = "Create .specmesh.yml";
+        item.iconPath = new vscode.ThemeIcon("gear", new vscode.ThemeColor("disabledForeground"));
+      }
+      item.command = {
+        command: "specmesh.openOrCreateConfig",
+        title: "Open or Create .specmesh.yml",
+        arguments: [element.folderName],
+      };
       return item;
     }
 
@@ -87,6 +117,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
     return this.getDocTreeItem(element.node);
   }
 
+
   private getDocTreeItem(node: DocNode): vscode.TreeItem {
     const fileName = node.relativePath.split("/").pop() ?? node.relativePath;
     const format = this.labelFormat();
@@ -97,6 +128,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
     const item = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.None);
     item.description = description;
     item.tooltip = node.relativePath;
+    item.contextValue = "doc";
     // lets VS Code's built-in git decorations (modified/added color+badge) apply to this item for free
     item.resourceUri = vscode.Uri.file(node.absolutePath);
 
@@ -151,9 +183,18 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
         ...missingInFolder.map((p) => p.docType).filter((t): t is string => !!t),
       ]);
 
-      return [...categoryLabels.entries()]
-        .filter(([type]) => presentTypes.has(type))
-        .map(([type, label]) => ({ kind: "category", folderName: element.folderName, type, label }));
+      const configItem: TreeItemData = {
+        kind: "config",
+        folderName: element.folderName,
+        exists: this.configExists.get(element.folderName) ?? false,
+      };
+
+      return [
+        configItem,
+        ...[...categoryLabels.entries()]
+          .filter(([type]) => presentTypes.has(type))
+          .map(([type, label]): TreeItemData => ({ kind: "category", folderName: element.folderName, type, label })),
+      ];
     }
 
     if (element.kind === "category") {
