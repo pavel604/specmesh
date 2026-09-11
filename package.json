@@ -2,7 +2,7 @@
   "name": "specmesh",
   "displayName": "specmesh",
   "description": "Cross-repo documentation graph for the agentic spec-driven development lifecycle: indexes mission/epic/FR/ADR/reference/instructions/skill docs across every open workspace folder (mission/epic opt-in per repo), flags broken cross-repo links, orphaned docs, and missing tracked files.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "publisher": "specmesh",
   "license": "MIT",
   "private": true,
@@ -48,9 +48,18 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "folder": { "type": "string", "description": "Restrict to this workspace folder name." },
-            "type": { "type": "string", "description": "Restrict to this doc type, e.g. 'adr', 'reference', 'fr-spec', 'instructions', 'skill'." },
-            "query": { "type": "string", "description": "Case-insensitive substring to match against the doc's title or file path." }
+            "folder": {
+              "type": "string",
+              "description": "Restrict to this workspace folder name."
+            },
+            "type": {
+              "type": "string",
+              "description": "Restrict to this doc type, e.g. 'adr', 'reference', 'fr-spec', 'instructions', 'skill'."
+            },
+            "query": {
+              "type": "string",
+              "description": "Case-insensitive substring to match against the doc's title or file path."
+            }
           }
         }
       },
@@ -63,7 +72,10 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "folder": { "type": "string", "description": "Restrict to this workspace folder name." }
+            "folder": {
+              "type": "string",
+              "description": "Restrict to this workspace folder name."
+            }
           }
         }
       },
@@ -76,7 +88,10 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "folder": { "type": "string", "description": "Restrict to this workspace folder name." }
+            "folder": {
+              "type": "string",
+              "description": "Restrict to this workspace folder name."
+            }
           }
         }
       },
@@ -89,7 +104,10 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "folder": { "type": "string", "description": "Restrict to this workspace folder name." }
+            "folder": {
+              "type": "string",
+              "description": "Restrict to this workspace folder name."
+            }
           }
         }
       },
@@ -102,9 +120,14 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "path": { "type": "string", "description": "Relative (e.g. 'docs/adr/ADR-004-....md') or absolute path of the tracked doc." }
+            "path": {
+              "type": "string",
+              "description": "Relative (e.g. 'docs/adr/ADR-004-....md') or absolute path of the tracked doc."
+            }
           },
-          "required": ["path"]
+          "required": [
+            "path"
+          ]
         }
       },
       {
@@ -116,17 +139,36 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "folder": { "type": "string", "description": "The workspace folder name whose .specmesh.yml to update." },
-            "type": { "type": "string", "description": "Doc type id, e.g. 'adr', 'mission', or a custom type name." },
-            "label": { "type": "string", "description": "Human-readable category label shown in the Docs tree, e.g. 'ADRs'." },
-            "glob": { "type": "string", "description": "Glob relative to the folder root, e.g. 'docs/adr/ADR-*.md'. Wildcard-free globs are treated as one expected file and flagged 'missing' if absent." },
+            "folder": {
+              "type": "string",
+              "description": "The workspace folder name whose .specmesh.yml to update."
+            },
+            "type": {
+              "type": "string",
+              "description": "Doc type id, e.g. 'adr', 'mission', or a custom type name."
+            },
+            "label": {
+              "type": "string",
+              "description": "Human-readable category label shown in the Docs tree, e.g. 'ADRs'."
+            },
+            "glob": {
+              "type": "string",
+              "description": "Glob relative to the folder root, e.g. 'docs/adr/ADR-*.md'. Wildcard-free globs are treated as one expected file and flagged 'missing' if absent."
+            },
             "exclude": {
               "type": "array",
-              "items": { "type": "string" },
+              "items": {
+                "type": "string"
+              },
               "description": "Optional glob(s) relative to the folder root to exclude from this entry's matches."
             }
           },
-          "required": ["folder", "type", "label", "glob"]
+          "required": [
+            "folder",
+            "type",
+            "label",
+            "glob"
+          ]
         }
       },
       {
