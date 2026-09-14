@@ -31,6 +31,8 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
   private nodes: DocNode[] = [];
   private missing: Problem[] = [];
   private brokenLinkCounts = new Map<string, number>();
+  private problemsByFolder = new Map<string, { missing: number; brokenLinks: number }>();
+  private problemsByCategory = new Map<string, { missing: number; brokenLinks: number }>();
   private loading = true;
   private configExists = new Map<string, boolean>();
 
@@ -44,6 +46,30 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
         this.brokenLinkCounts.set(problem.absolutePath, (this.brokenLinkCounts.get(problem.absolutePath) ?? 0) + 1);
       }
     }
+
+    this.problemsByFolder = new Map();
+    this.problemsByCategory = new Map();
+    const bump = (map: Map<string, { missing: number; brokenLinks: number }>, key: string, field: "missing" | "brokenLinks") => {
+      const counts = map.get(key) ?? { missing: 0, brokenLinks: 0 };
+      counts[field] += 1;
+      map.set(key, counts);
+    };
+    for (const problem of this.missing) {
+      if (!problem.workspaceFolderName) {
+        continue;
+      }
+      bump(this.problemsByFolder, problem.workspaceFolderName, "missing");
+      if (problem.docType) {
+        bump(this.problemsByCategory, `${problem.workspaceFolderName}::${problem.docType}`, "missing");
+      }
+    }
+    for (const node of nodes) {
+      if ((this.brokenLinkCounts.get(node.absolutePath) ?? 0) > 0) {
+        bump(this.problemsByFolder, node.workspaceFolderName, "brokenLinks");
+        bump(this.problemsByCategory, `${node.workspaceFolderName}::${node.type}`, "brokenLinks");
+      }
+    }
+
     this._onDidChangeTreeData.fire();
   }
 
@@ -56,6 +82,35 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
 
   private labelFormat(): LabelFormat {
     return vscode.workspace.getConfiguration("specmesh").get<LabelFormat>("docLabelFormat") ?? "both";
+  }
+
+  /** Missing tracked files (error/red) take precedence over broken links (warning/amber) when a folder or
+   * category has both, matching the severity already used for individual doc/missing tree items. */
+  private problemIcon(counts: { missing: number; brokenLinks: number } | undefined): vscode.ThemeIcon | undefined {
+    if (!counts) {
+      return undefined;
+    }
+    if (counts.missing > 0) {
+      return new vscode.ThemeIcon("error", new vscode.ThemeColor("list.errorForeground"));
+    }
+    if (counts.brokenLinks > 0) {
+      return new vscode.ThemeIcon("warning", new vscode.ThemeColor("list.warningForeground"));
+    }
+    return undefined;
+  }
+
+  private problemTooltip(counts: { missing: number; brokenLinks: number } | undefined): string | undefined {
+    if (!counts) {
+      return undefined;
+    }
+    const parts: string[] = [];
+    if (counts.missing > 0) {
+      parts.push(`${counts.missing} missing file${counts.missing === 1 ? "" : "s"}`);
+    }
+    if (counts.brokenLinks > 0) {
+      parts.push(`${counts.brokenLinks} broken link${counts.brokenLinks === 1 ? "" : "s"}`);
+    }
+    return parts.length > 0 ? parts.join(", ") : undefined;
   }
 
   /** Re-renders with the current data (e.g. after a docLabelFormat setting change) without re-crawling. */
@@ -72,7 +127,9 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
 
     if (element.kind === "folder") {
       const item = new vscode.TreeItem(element.folderName, vscode.TreeItemCollapsibleState.Expanded);
-      item.iconPath = new vscode.ThemeIcon("repo");
+      const counts = this.problemsByFolder.get(element.folderName);
+      item.iconPath = this.problemIcon(counts) ?? new vscode.ThemeIcon("repo");
+      item.tooltip = this.problemTooltip(counts);
       item.contextValue = "folder";
       return item;
     }
@@ -99,7 +156,9 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
 
     if (element.kind === "category") {
       const item = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.Collapsed);
-      item.iconPath = new vscode.ThemeIcon("folder");
+      const counts = this.problemsByCategory.get(`${element.folderName}::${element.type}`);
+      item.iconPath = this.problemIcon(counts) ?? new vscode.ThemeIcon("folder");
+      item.tooltip = this.problemTooltip(counts);
       return item;
     }
 

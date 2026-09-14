@@ -1,4 +1,5 @@
 const LINK_RE = /\[([^\]]*)\]\(([^)]+)\)/g;
+const FENCE_RE = /^\s*```/;
 
 export interface RawLink {
   text: string;
@@ -8,12 +9,21 @@ export interface RawLink {
   endCol: number;
 }
 
-/** Extracts markdown links, skipping external URLs and same-file anchor-only links. */
+/** Extracts markdown links, skipping external URLs, same-file anchor-only links, and fenced code blocks. */
 export function extractMarkdownLinks(content: string): RawLink[] {
   const lines = content.split(/\r?\n/);
   const links: RawLink[] = [];
+  let insideFence = false;
 
   lines.forEach((line, lineIndex) => {
+    if (FENCE_RE.test(line)) {
+      insideFence = !insideFence;
+      return;
+    }
+    if (insideFence) {
+      return;
+    }
+
     LINK_RE.lastIndex = 0;
     let match: RegExpExecArray | null;
     while ((match = LINK_RE.exec(line))) {

@@ -36,4 +36,20 @@ suite("extractMarkdownLinks", () => {
     assert.equal(links[0].lineIndex, 0);
     assert.equal(links[1].lineIndex, 2);
   });
+
+  test("skips links inside fenced code blocks", () => {
+    const content = [
+      "[real](real.md)",
+      "```markdown",
+      "[template](<relative path>)",
+      "```",
+      "[after](after.md)",
+    ].join("\n");
+
+    const links = extractMarkdownLinks(content);
+
+    assert.equal(links.length, 2);
+    assert.equal(links[0].target, "real.md");
+    assert.equal(links[1].target, "after.md");
+  });
 });
