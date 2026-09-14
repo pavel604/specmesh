@@ -11,11 +11,11 @@ const DEFAULT_DOC_TYPES: DocTypeDefinition[] = [
   { type: "adr", label: "ADRs", glob: "docs/adr/ADR-*.md" },
   { type: "reference", label: "Reference", glob: "docs/reference/*.md" },
   { type: "fr-spec", label: "FR Specs", glob: "docs/FR-*/spec.v*.md" },
-  { type: "fr-plan", label: "FR Plans", glob: "docs/FR-*/plan.v*.md" },
-  { type: "fr-tasks", label: "FR Tasks", glob: "docs/FR-*/tasks.v*.md" },
-  { type: "fr-walkthrough", label: "FR Walkthroughs", glob: "docs/FR-*/walkthrough.v*.md" },
-  { type: "instructions", label: "Instructions", glob: ".github/instructions/*.instructions.md" },
-  { type: "skill", label: "Skills", glob: ".github/skills/*/SKILL.md" },
+  { type: "fr-plan", label: "FR Plans", glob: "docs/FR-*/plan.v*.md", root: true },
+  { type: "fr-tasks", label: "FR Tasks", glob: "docs/FR-*/tasks.v*.md", root: true },
+  { type: "fr-walkthrough", label: "FR Walkthroughs", glob: "docs/FR-*/walkthrough.v*.md", root: true },
+  { type: "instructions", label: "Instructions", glob: ".github/instructions/*.instructions.md", root: true },
+  { type: "skill", label: "Skills", glob: ".github/skills/*/SKILL.md", root: true },
 ];
 
 export function getDocTypeDefinitions(): DocTypeDefinition[] {

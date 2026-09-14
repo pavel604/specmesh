@@ -100,6 +100,7 @@ export async function crawlWorkspace(): Promise<CrawlResult> {
           relativePath,
           metadata,
           links,
+          root: def.root,
         });
       }
     }

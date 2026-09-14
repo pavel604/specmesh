@@ -1,9 +1,5 @@
 import { DocNode, Problem } from "../model/types";
 
-// Docs expected to be referenced from somewhere else in the graph (an epic, another
-// spec, etc). Mission/epic docs are legitimate roots, so they're excluded here.
-const ORPHAN_CHECK_TYPES = new Set(["adr", "reference", "fr-spec"]);
-
 export function computeProblems(nodes: DocNode[]): Problem[] {
   const problems: Problem[] = [];
   const linkedAbsolutePaths = new Set<string>();
@@ -27,7 +23,7 @@ export function computeProblems(nodes: DocNode[]): Problem[] {
   }
 
   for (const node of nodes) {
-    if (ORPHAN_CHECK_TYPES.has(node.type) && !linkedAbsolutePaths.has(node.absolutePath)) {
+    if (!node.root && !linkedAbsolutePaths.has(node.absolutePath)) {
       problems.push({
         kind: "orphan",
         docId: node.id,
