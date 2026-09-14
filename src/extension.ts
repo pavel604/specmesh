@@ -21,9 +21,19 @@ function pluralize(count: number, singular: string): string {
   return `${count} ${singular}${count === 1 ? "" : "s"}`;
 }
 
-/** Always renders all four counts (even when zero) so the status row's length — and therefore the tree's
- * vertical offset — stays consistent between refreshes instead of jumping. */
-function formatStatusMessage(docCount: number, missingCount: number, brokenLinks: number, orphans: number): string {
+/** Renders all four counts (even when zero) so the status row's length — and therefore the tree's vertical
+ * offset — stays consistent between refreshes instead of jumping. Returns `undefined` when there are zero
+ * tracked docs and zero missing-tracked-file problems, so the tree is recognized as empty and its
+ * `viewsWelcome` content renders instead of a blank summary. */
+export function computeStatusMessage(
+  docCount: number,
+  missingCount: number,
+  brokenLinks: number,
+  orphans: number
+): string | undefined {
+  if (docCount === 0 && missingCount === 0) {
+    return undefined;
+  }
   return `${pluralize(docCount, "doc")} · ${missingCount} missing · ${pluralize(brokenLinks, "broken link")} · ${pluralize(orphans, "orphan")}`;
 }
 
@@ -50,7 +60,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const brokenLinks = problems.filter((p) => p.kind === "broken-link").length;
     const orphans = problems.filter((p) => p.kind === "orphan").length;
     const missing = missingProblems.length;
-    treeView.message = formatStatusMessage(nodes.length, missing, brokenLinks, orphans);
+    treeView.message = computeStatusMessage(nodes.length, missing, brokenLinks, orphans);
 
     outputChannel.appendLine(
       `specmesh: indexed ${nodes.length} docs, ${brokenLinks} broken link(s), ${orphans} orphan(s), ${missing} missing tracked file(s).`
