@@ -18,19 +18,35 @@ only needs to get a correctly bumped, tagged commit onto `origin`.
    message — don't invent a changelog.
 2. Ask the user for the semver bump if not given: `patch` (default, bug fixes/small doc changes), `minor` (new
    user-facing capability, backward compatible), or `major` (breaking change). Infer a reasonable default from the
-   diff being released, but confirm rather than guessing on anything that looks bigger than a patch.
-3. Run `npm version <patch|minor|major> -m "chore: release v%s"` from the repo root. This bumps the `version`
+   diff being released, but confirm rather than guessing on anything that looks bigger than a patch. Also get a
+   one-line (or few-bullet) summary of what changed if not already given — this becomes the changelog entry, don't
+   invent one from the diff without the user's input.
+3. Add a new section to the top of [CHANGELOG.md](../../../CHANGELOG.md), right under the title line, in
+   [Keep a Changelog](https://keepachangelog.com/) style:
+
+   ```markdown
+   ## [X.Y.Z] - YYYY-MM-DD
+
+   - <summary bullet(s) from step 2>
+   ```
+
+   Use today's date and the version being released (not yet bumped in `package.json` at this point — compute it
+   from the current version + the chosen bump). Commit it on its own (e.g. `git commit -am "docs: add vX.Y.Z
+   changelog entry"`) — `npm version` refuses to run with ANY staged or unstaged changes present (not just
+   files it touches itself), so the changelog entry cannot be staged-and-left for `npm version` to sweep up; it
+   needs its own clean commit first.
+4. Run `npm version <patch|minor|major> -m "chore: release v%s"` from the repo root. This bumps the `version`
    field in [package.json](../../../package.json), commits that one-line change, and creates an annotated git tag
    `vX.Y.Z` pointing at it — do not hand-edit `package.json`'s version or create the tag manually.
-4. Push the commit and the tag together: `git push --follow-tags` (plain `git push` alone will NOT push the tag).
-5. **Gate — mandatory, ask before this step.** Use the ask-questions tool: header "Push Release", question
+5. Push the commit and the tag together: `git push --follow-tags` (plain `git push` alone will NOT push the tag).
+6. **Gate — mandatory, ask before this step.** Use the ask-questions tool: header "Push Release", question
    "Push commit + tag v<X.Y.Z> to origin now? This triggers a public GitHub Actions release build.", options
    `Push` / `Cancel` (allow freeform input for anything else, e.g. "wait" or a different tag). Do not push without
    an explicit `Push` answer, and do not infer consent from earlier context in the conversation.
    - **Push** → run `git push --follow-tags`.
    - **Cancel** (or anything else) → stop here. Leave the local commit/tag as-is (don't undo them unless asked)
      and tell the user how to push later themselves.
-6. Point the user to the Actions run / the new GitHub Release (with the `.vsix` asset) once pushed — don't assume
+7. Point the user to the Actions run / the new GitHub Release (with the `.vsix` asset) once pushed — don't assume
    success without them checking, since this skill can't watch CI itself.
 
 ## Notes
@@ -39,5 +55,8 @@ only needs to get a correctly bumped, tagged commit onto `origin`.
   VSIX build. Don't remove `private` or add npm publish steps.
 - Tags must match `v*.*.*` (e.g. `v0.0.2`) — `npm version` already produces this format, don't override the tag
   name.
-- If `npm version` fails because the working tree isn't clean, that means step 1 was skipped — go back and commit
-  first rather than forcing (`--force`) past it.
+- If `npm version` fails because the working tree isn't clean, that means step 1 or step 3's changelog commit was
+  skipped (or left staged/unstaged) — go back and commit first rather than forcing (`--force`) past it. Untracked
+  files count too, not just tracked ones.
+- [CHANGELOG.md](../../../CHANGELOG.md) is the source of truth for what shipped in each version — every release
+  must add a section to it, don't skip step 3 even for small releases.
