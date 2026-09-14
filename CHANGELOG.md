@@ -2,6 +2,12 @@
 
 All notable changes to the "specmesh" extension are documented in this file.
 
+## [0.7.0] - 2026-09-14
+
+- Docs Explorer folder/category rows now show a warning/error icon when they contain a broken link or missing
+  tracked file; fixed a false-positive broken-link flag for markdown links shown inside fenced code-block
+  examples.
+
 ## [0.6.0] - 2026-09-14
 
 - Actions menu to show orphaned/missing and refresh the docs tree (FR-004)
