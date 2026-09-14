@@ -33,12 +33,14 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
   private brokenLinkCounts = new Map<string, number>();
   private problemsByFolder = new Map<string, { missing: number; brokenLinks: number }>();
   private problemsByCategory = new Map<string, { missing: number; brokenLinks: number }>();
+  private categoryOrder = new Map<string, string[]>();
   private loading = true;
   private configExists = new Map<string, boolean>();
 
-  update(nodes: DocNode[], problems: Problem[]): void {
+  update(nodes: DocNode[], problems: Problem[], categoryOrder: Map<string, string[]>): void {
     this.loading = false;
     this.nodes = nodes;
+    this.categoryOrder = categoryOrder;
     this.missing = problems.filter((p) => p.kind === "missing");
     this.brokenLinkCounts = new Map();
     for (const problem of problems) {
@@ -82,6 +84,13 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
 
   private labelFormat(): LabelFormat {
     return vscode.workspace.getConfiguration("specmesh").get<LabelFormat>("docLabelFormat") ?? "both";
+  }
+
+  /** A type's position in its folder's `.specmesh.yml` track order (or the global default order, when there's
+   * no per-repo config) — falls back to sorting last if a type is somehow absent from that order. */
+  private categoryIndex(folderName: string, type: string): number {
+    const index = this.categoryOrder.get(folderName)?.indexOf(type) ?? -1;
+    return index === -1 ? Number.MAX_SAFE_INTEGER : index;
   }
 
   /** Missing tracked files (error/red) take precedence over broken links (warning/amber) when a folder or
@@ -252,6 +261,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
         configItem,
         ...[...categoryLabels.entries()]
           .filter(([type]) => presentTypes.has(type))
+          .sort(([typeA], [typeB]) => this.categoryIndex(element.folderName, typeA) - this.categoryIndex(element.folderName, typeB))
           .map(([type, label]): TreeItemData => ({ kind: "category", folderName: element.folderName, type, label })),
       ];
     }

@@ -5,14 +5,13 @@ track:
     label: Mission
     glob: docs/mission.md
     root: true
-  - type: sdd
-    label: Spec-Driven Development
-    glob: docs/spec-driven-development.md
-    root: true
   - type: epic
     label: Epics
     glob: docs/epics/EPIC-*.md
     root: true
+  - type: fr-spec
+    label: FR Specs
+    glob: docs/FR-*/spec.v*.md
   - type: adr
     label: ADRs
     glob: docs/adr/ADR-*.md
@@ -20,9 +19,6 @@ track:
   - type: reference
     label: Reference
     glob: docs/reference/*.md
-  - type: fr-spec
-    label: FR Specs
-    glob: docs/FR-*/spec.v*.md
   - type: fr-plan
     label: FR Plans
     glob: docs/FR-*/plan.v*.md
@@ -42,4 +38,8 @@ track:
   - type: skill
     label: Skills
     glob: .github/skills/*/SKILL.md
+    root: true
+  - type: sdd
+    label: Spec-Driven Development
+    glob: docs/spec-driven-development.md
     root: true

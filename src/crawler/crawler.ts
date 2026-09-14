@@ -26,6 +26,9 @@ function existsSafe(target: string): boolean {
 export interface CrawlResult {
   nodes: DocNode[];
   missingProblems: Problem[];
+  /** each folder's effective doc-type order (its own .specmesh.yml `track:` order, or the global default),
+   * so the tree can render category rows in that same order instead of a hardcoded one. */
+  categoryOrder: Map<string, string[]>;
 }
 
 export async function crawlWorkspace(): Promise<CrawlResult> {
@@ -33,11 +36,13 @@ export async function crawlWorkspace(): Promise<CrawlResult> {
   const globalDefs = getDocTypeDefinitions();
   const nodes: DocNode[] = [];
   const missingProblems: Problem[] = [];
+  const categoryOrder = new Map<string, string[]>();
   const seenPaths = new Set<string>();
 
   for (const folder of folders) {
     const repoConfig = await loadRepoConfig(folder);
     const defs = repoConfig.track ?? globalDefs;
+    categoryOrder.set(folder.name, defs.map((d) => d.type));
 
     for (const def of defs) {
       const pattern = new vscode.RelativePattern(folder, def.glob);
@@ -106,6 +111,6 @@ export async function crawlWorkspace(): Promise<CrawlResult> {
     }
   }
 
-  return { nodes, missingProblems };
+  return { nodes, missingProblems, categoryOrder };
 }
 
