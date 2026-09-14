@@ -2,6 +2,12 @@
 
 All notable changes to the "specmesh" extension are documented in this file.
 
+## [0.8.1] - 2026-09-14
+
+- Fixed: the Docs Explorer's "Scaffold Spec-Driven Development Structure" welcome prompt was hidden after
+  crawling a workspace folder with no tracked docs/`.specmesh.yml`, because the always-populated status row
+  suppressed VS Code's empty-view welcome content (FR-002 v2).
+
 ## [0.8.0] - 2026-09-14
 
 - Docs Explorer category rows (Mission, Epics, ADRs, FR Specs, etc.) now render in the order they're listed in
