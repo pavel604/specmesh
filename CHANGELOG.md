@@ -2,6 +2,11 @@
 
 All notable changes to the "specmesh" extension are documented in this file.
 
+## [0.8.0] - 2026-09-14
+
+- Docs Explorer category rows (Mission, Epics, ADRs, FR Specs, etc.) now render in the order they're listed in
+  `.specmesh.yml`'s `track:` list, instead of a hardcoded order.
+
 ## [0.7.0] - 2026-09-14
 
 - Docs Explorer folder/category rows now show a warning/error icon when they contain a broken link or missing
