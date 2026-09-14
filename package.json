@@ -215,7 +215,35 @@
         "icon": "$(trash)"
       }
     ],
+    "submenus": [
+      {
+        "id": "specmesh.docsExplorerActions",
+        "label": "More Actions",
+        "icon": "$(ellipsis)"
+      }
+    ],
     "menus": {
+      "view/title": [
+        {
+          "submenu": "specmesh.docsExplorerActions",
+          "when": "view == specmesh.docsExplorer",
+          "group": "navigation"
+        }
+      ],
+      "specmesh.docsExplorerActions": [
+        {
+          "command": "specmesh.showOrphans",
+          "group": "1_specmesh"
+        },
+        {
+          "command": "specmesh.showMissing",
+          "group": "1_specmesh"
+        },
+        {
+          "command": "specmesh.refresh",
+          "group": "1_specmesh"
+        }
+      ],
       "view/item/context": [
         {
           "command": "specmesh.addNewDoc",

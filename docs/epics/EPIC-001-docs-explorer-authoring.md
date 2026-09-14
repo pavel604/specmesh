@@ -15,6 +15,7 @@ from the tree, without hand-crafting file paths or leaving VS Code's Explorer vi
 | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ | ----------- |
 | [FR-001](../FR-001-docs-explorer-authoring/spec.v1.md) | Manage .specmesh.yml and Create New Docs from the Docs Tree | Done |
 | [FR-002](../FR-002-docs-tree-status-row/spec.v1.md) | Fixed Docs Tree Status Row | Done |
+| [FR-004](../FR-004-docs-explorer-actions-menu/spec.v1.md) | Docs Explorer Actions Menu | Done |
 
 ## Dependencies
 
