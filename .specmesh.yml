@@ -4,15 +4,19 @@ track:
   - type: mission
     label: Mission
     glob: docs/mission.md
+    root: true
   - type: sdd
     label: Spec-Driven Development
     glob: docs/spec-driven-development.md
+    root: true
   - type: epic
     label: Epics
     glob: docs/epics/EPIC-*.md
+    root: true
   - type: adr
     label: ADRs
     glob: docs/adr/ADR-*.md
+    root: true
   - type: reference
     label: Reference
     glob: docs/reference/*.md
@@ -22,15 +26,20 @@ track:
   - type: fr-plan
     label: FR Plans
     glob: docs/FR-*/plan.v*.md
+    root: true
   - type: fr-tasks
     label: FR Tasks
     glob: docs/FR-*/tasks.v*.md
+    root: true
   - type: fr-walkthrough
     label: FR Walkthroughs
     glob: docs/FR-*/walkthrough.v*.md
+    root: true
   - type: instructions
     label: Instructions
     glob: .github/instructions/*.instructions.md
+    root: true
   - type: skill
     label: Skills
     glob: .github/skills/*/SKILL.md
+    root: true

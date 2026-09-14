@@ -48,5 +48,6 @@ The test: every changed line should trace directly to the user's request.
 
 ## 4. Check for build/lint errors
 
-Check for errors before calling it done when you edit code files. <!-- Add this product's build/test command(s)
-here, e.g. "run `npm test`" or "run the X build task". -->
+Check for errors before calling it done when you edit code files. Run `npm test` (compiles and runs the
+`src/test/**/*.test.ts` suite in a VS Code Extension Development Host via `@vscode/test-cli`, per
+[ADR-001](../docs/adr/ADR-001-testing-strategy.md)).
