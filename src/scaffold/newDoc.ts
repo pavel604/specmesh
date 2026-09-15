@@ -1,12 +1,13 @@
 import * as vscode from "vscode";
 import { buildSpecmeshYml } from "./scaffold";
+import { BUILTIN_PACK_DATA } from "./patterns";
 import { loadRepoConfig } from "../crawler/repoConfig";
 import { getDocTypeDefinitions } from "../crawler/docTypes";
 
-// FR/mission/SDD stay out of the "Add new..." picker: FR spec/plan/tasks/walkthrough is a multi-file flow
-// owned by /new-feature, mission.md is created only by the scaffold command, and the SDD doc is a
+// FR/charter/SDD stay out of the "Add new..." picker: FR spec/plan/tasks/walkthrough is a multi-file flow
+// owned by /new-feature, charter.md is created only by the scaffold command, and the SDD doc is a
 // hand-authored singleton, not something to spin up ad hoc.
-const NON_ADDABLE_TYPES = new Set(["fr-spec", "fr-plan", "fr-tasks", "fr-walkthrough", "mission", "sdd"]);
+const NON_ADDABLE_TYPES = new Set(["fr-spec", "fr-plan", "fr-tasks", "fr-walkthrough", "charter", "sdd"]);
 
 function findFolder(folderName: string): vscode.WorkspaceFolder | undefined {
   return (vscode.workspace.workspaceFolders ?? []).find((f) => f.name === folderName);
@@ -30,7 +31,7 @@ export async function openOrCreateConfig(folderName: string): Promise<void> {
   }
   const uri = vscode.Uri.joinPath(folder.uri, ".specmesh.yml");
   if (!(await fileExists(uri))) {
-    await vscode.workspace.fs.writeFile(uri, Buffer.from(buildSpecmeshYml(false), "utf8"));
+    await vscode.workspace.fs.writeFile(uri, Buffer.from(buildSpecmeshYml(BUILTIN_PACK_DATA, false), "utf8"));
   }
   await vscode.window.showTextDocument(uri);
 }

@@ -1,7 +1,7 @@
 {
   "name": "specmesh",
   "displayName": "specmesh",
-  "description": "Cross-repo documentation graph for the agentic spec-driven development lifecycle: indexes mission/epic/FR/ADR/reference/instructions/skill docs across every open workspace folder (mission/epic opt-in per repo), flags broken cross-repo links, orphaned docs, and missing tracked files.",
+  "description": "Cross-repo documentation graph for the agentic spec-driven development lifecycle: indexes charter/epic/FR/ADR/reference/instructions/skill docs across every open workspace folder (charter/epic opt-in per repo), flags broken cross-repo links, orphaned docs, and missing tracked files.",
   "version": "0.8.1",
   "publisher": "specmesh",
   "license": "MIT",
@@ -44,7 +44,7 @@
         "displayName": "List specmesh Docs",
         "canBeReferencedInPrompt": true,
         "toolReferenceName": "specmeshDocs",
-        "modelDescription": "Lists docs tracked by specmesh across open workspace folders (mission/epic/ADR/reference/FR spec-plan-tasks-walkthrough/instructions/skill, plus any repo-specific types from .specmesh.yml). Use to find a doc by title, type, or repo before reading or editing it. Supports optional folder/type/query filters; query matches title or file path substrings.",
+        "modelDescription": "Lists docs tracked by specmesh across open workspace folders (charter/epic/ADR/reference/FR spec-plan-tasks-walkthrough/instructions/skill, plus any repo-specific types from .specmesh.yml). Use to find a doc by title, type, or repo before reading or editing it. Supports optional folder/type/query filters; query matches title or file path substrings.",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -84,7 +84,7 @@
         "displayName": "Find Orphaned specmesh Docs",
         "canBeReferencedInPrompt": true,
         "toolReferenceName": "specmeshOrphans",
-        "modelDescription": "Finds ADRs/reference docs/FR specs that no other tracked doc links to (mission/epic docs are legitimate roots and excluded). Use to answer 'which docs are unreferenced/orphaned'.",
+        "modelDescription": "Finds ADRs/reference docs/FR specs that no other tracked doc links to (charter/epic docs are legitimate roots and excluded). Use to answer 'which docs are unreferenced/orphaned'.",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -100,7 +100,7 @@
         "displayName": "Find Missing Tracked Files",
         "canBeReferencedInPrompt": true,
         "toolReferenceName": "specmeshMissing",
-        "modelDescription": "Finds literal (wildcard-free) .specmesh.yml/specmesh.docTypes track entries (e.g. a specific docs/mission.md) whose file no longer exists. Use to answer 'is anything specmesh expects missing'.",
+        "modelDescription": "Finds literal (wildcard-free) .specmesh.yml/specmesh.docTypes track entries (e.g. a specific docs/charter.md) whose file no longer exists. Use to answer 'is anything specmesh expects missing'.",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -145,7 +145,7 @@
             },
             "type": {
               "type": "string",
-              "description": "Doc type id, e.g. 'adr', 'mission', or a custom type name."
+              "description": "Doc type id, e.g. 'adr', 'charter', or a custom type name."
             },
             "label": {
               "type": "string",
@@ -242,6 +242,10 @@
         {
           "command": "specmesh.refresh",
           "group": "1_specmesh"
+        },
+        {
+          "command": "specmesh.scaffoldSdlc",
+          "group": "2_specmesh"
         }
       ],
       "view/item/context": [
@@ -262,7 +266,7 @@
       "properties": {
         "specmesh.docTypes": {
           "type": "array",
-          "description": "Fallback doc types/globs used for any repo that doesn't have its own .specmesh.yml. Each entry: { type, label, glob, exclude? }. Empty array (default) uses specmesh's built-in defaults (ADR/FR/reference/instructions/skill) -- mission/epic are deliberately excluded from the fallback since they're a root-only, opt-in-per-repo concept.",
+          "description": "Fallback doc types/globs used for any repo that doesn't have its own .specmesh.yml. Each entry: { type, label, glob, exclude? }. Empty array (default) uses specmesh's built-in defaults (ADR/FR/reference/instructions/skill) -- charter/epic are deliberately excluded from the fallback since they're a root-only, opt-in-per-repo concept.",
           "items": {
             "type": "object",
             "properties": {

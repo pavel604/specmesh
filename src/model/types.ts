@@ -7,7 +7,7 @@ export interface DocTypeDefinition {
   /** glob(s) relative to the workspace folder root to exclude from `glob`'s matches, e.g. a broad
    * ".github/**\/*.md" catch-all excluding ".github/skills/*\/templates/**". */
   exclude?: string[];
-  /** when true, docs of this type are never flagged as orphans (e.g. mission/epic/instructions/skill docs
+  /** when true, docs of this type are never flagged as orphans (e.g. charter/epic/instructions/skill docs
    * that are legitimate roots, not expected to be linked from elsewhere). Defaults to false/checked. */
   root?: boolean;
 }

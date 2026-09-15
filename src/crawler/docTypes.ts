@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
 import { DocTypeDefinition } from "../model/types";
 
-// Matches a generic mission -> epic -> FR -> ADR/reference convention (see docs/spec-driven-development.md
+// Matches a generic charter -> epic -> FR -> ADR/reference convention (see docs/spec-driven-development.md
 // in a repo that has scaffolded one). Anchored to the repo root (no leading "**/") both for crawl speed and
 // so nested scaffolding-kit copies of these files aren't picked up by accident.
-// mission/epic are deliberately NOT here: they're a root-only concept (one per product, not one per repo) —
-// a repo only tracks them via its own .specmesh.yml `track:` list, otherwise every repo without a mission.md
+// charter/epic are deliberately NOT here: they're a root-only concept (one per product, not one per repo) —
+// a repo only tracks them via its own .specmesh.yml `track:` list, otherwise every repo without a charter.md
 // of its own would get a false "missing" flag.
 const DEFAULT_DOC_TYPES: DocTypeDefinition[] = [
   { type: "adr", label: "ADRs", glob: "docs/adr/ADR-*.md" },

@@ -26,7 +26,7 @@ Phase 1. Otherwise make the reasonable call and proceed.
 4. Scan `DOCS_DIR` for existing `FR-###-*` folders, take the highest `###`, and use the next sequential number
    (zero-padded to 3 digits) — e.g. `FR-004-claim-notes`. If `docs/` doesn't exist yet, create it and start at
    `FR-001`.
-5. Read `{{MISSION_DOC_REL}}` and list the epics under `{{EPICS_DIR_REL}}/EPIC-###-*.md`. Pick the epic this
+5. Read `{{CHARTER_DOC_REL}}` and list the epics under `{{EPICS_DIR_REL}}/EPIC-###-*.md`. Pick the epic this
    feature clearly belongs to. If more than one is plausible, or none fit, ask the user once (offer the existing
    epics plus "new epic" as options) — do not silently guess a cross-cutting theme. If the user asks for a new
    epic, create `{{EPICS_DIR_REL}}/EPIC-<next-num>-<short-name>.md` (same structure as the existing epic docs)

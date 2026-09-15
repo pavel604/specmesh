@@ -1,4 +1,4 @@
-# {{PRODUCT_NAME}} Mission
+# {{PRODUCT_NAME}} Charter
 
 **Status**: Draft
 **Date**: <!-- YYYY-MM-DD -->
@@ -25,5 +25,5 @@ hierarchy and which skill produces what — see [spec-driven-development.md](spe
 
 ## Changelog
 
-<!-- One dated bullet per material change to this mission (scope shift, approach change). Routine edits don't
+<!-- One dated bullet per material change to this charter (scope shift, approach change). Routine edits don't
      need an entry. -->

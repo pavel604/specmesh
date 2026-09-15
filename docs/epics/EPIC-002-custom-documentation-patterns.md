@@ -5,7 +5,7 @@
 
 ## Outcome
 
-specmesh's engine stops assuming one hardcoded documentation pattern (mission → epic → FR → ADR/reference).
+specmesh's engine stops assuming one hardcoded documentation pattern (charter → epic → FR → ADR/reference).
 Doc-type-specific rules move from code into data on `DocTypeDefinition`, and scaffold/config become
 pattern-driven — so a repo can define or select a documentation pattern that isn't specmesh's own built-in
 convention, without forking the extension.
@@ -15,6 +15,7 @@ convention, without forking the extension.
 | FR | Title | Status |
 | --- | --- | --- |
 | [FR-003](../FR-003-doc-type-root-metadata/spec.v1.md) | Replace ORPHAN_CHECK_TYPES with root/versioned metadata | Done |
+| [FR-007](../FR-007-doc-pattern-packs/spec.v1.md) | Documentation Pattern Packs | Done (descoped to internal refactor — see spec's Revision Note) |
 
 ## Dependencies
 
@@ -25,3 +26,7 @@ convention, without forking the extension.
 ## Changelog
 
 - 2026-09-14: Epic created.
+- FR-007 shipped only its internal `PatternPack` refactor of `scaffold.ts`; the user-facing custom-pack
+  picker/discovery/authoring command were implemented then reverted as needing more design. Revisiting custom
+  pattern packs as a user-facing feature is left for a future FR.
+

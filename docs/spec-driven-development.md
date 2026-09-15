@@ -1,16 +1,16 @@
 # Spec-Driven Development (the "how")
 
-This is the process/documentation methodology used to go from the [mission](mission.md) (the "why") to shipped
-code. Keep business rationale out of this doc — it belongs in `mission.md`. Keep this doc process-only.
+This is the process/documentation methodology used to go from the [charter](charter.md) (the "why") to shipped
+code. Keep business rationale out of this doc — it belongs in `charter.md`. Keep this doc process-only.
 
 ## Repo layout
 
-- `specmesh` — mission/epic root
+- `specmesh` — charter/epic root
 
 ## Artifact hierarchy
 
 ```
-Mission (docs/mission.md — one per product, rarely changes)
+Charter (docs/charter.md — one per product, rarely changes)
   └─ Epic (docs/epics/EPIC-###-*.md — a theme/capability, may span multiple repos)
        └─ FR (<repo>/docs/FR-###-*/spec.vN.md + plan/tasks/walkthrough — one buildable story)
             └─ Reference (<repo>/docs/reference/*.md — externally-owned schema/data snapshot the FR depends on)
@@ -30,7 +30,7 @@ duplicating.
 
 | Artifact                            | Created by                                                                      | Cadence                                                                                         |
 | ----------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Mission                             | Human, agent-assisted                                                           | Once; edited only when the product's core problem/approach changes                              |
+| Charter                             | Human, agent-assisted                                                          | Once; edited only when the product's core problem/approach changes                              |
 | Epic                                | `new-feature` Phase 0 (asks which epic, or to create one), or authored directly | When a new capability theme emerges                                                             |
 | FR spec/plan/tasks/walkthrough (v1) | `/new-feature`                                                                  | One per story                                                                                   |
 | FR revision (v2, v3, ...)           | `/change-request`                                                               | On bug/requirement drift against a shipped FR                                                   |
@@ -45,12 +45,12 @@ duplicating.
 - When an FR or ADR depends on an externally-owned schema, capture the table/column/vocabulary facts once in
   `docs/reference/<topic>.md` and cross-link it from both — don't duplicate schema facts inline in the FR's
   Assumptions or the ADR's Context, and don't scope the reference doc beyond what that FR actually touches.
-- `mission.md` stays strictly business-facing language (problem, approach, who it's for, non-goals). No process
+- `charter.md` stays strictly business-facing language (problem, approach, who it's for, non-goals). No process
   mechanics, no skill names, no file-layout diagrams — those live here instead.
 - **ADRs are immutable once Accepted.** If a decision changes, write a new ADR stating `Supersedes ADR-NNN` in
   its Context, and only flip the old ADR's `Status` line to `Superseded by ADR-MMM` — never rewrite its body. This
   mirrors how `/change-request` already treats FR spec revisions.
-- **Mission and Epic docs are living documents, not versioned files** — no `v1`/`v2` file-per-revision like FRs.
+- **Charter and Epic docs are living documents, not versioned files** — no `v1`/`v2` file-per-revision like FRs.
   Edit them in place, but record every _material_ change (scope shift, dependency swap, a cited ADR getting
   superseded, etc.) as one dated bullet in a `## Changelog` section at the bottom. Routine story-completion
   updates to an epic's Stories table don't need a changelog entry — only changes to the epic's Outcome, Status,
@@ -63,7 +63,7 @@ only taxes exploration for one specific task:
 
 - **Always-loaded context** — `copilot-instructions.md` and any `.instructions.md` file's `applyTo` scope. These
   load regardless of relevance, so keep them deliberately small:
-  - `copilot-instructions.md` stays pointer-only (links, not inlined prose) — link to `mission.md`/this doc
+  - `copilot-instructions.md` stays pointer-only (links, not inlined prose) — link to `charter.md`/this doc
     instead of restating them.
   - Keep `applyTo` globs as narrow as the actual topic. Widening a glob "to be safe" is the most common way this
     tier silently bloats — treat it as a real cost, not a free safety margin.

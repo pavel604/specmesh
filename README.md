@@ -3,14 +3,14 @@
 Cross-repo documentation graph for the agentic spec-driven development lifecycle, in multi-root VS Code
 workspaces.
 
-When mission → epic → FR (spec/plan/tasks/walkthrough) docs and their instructions/skills are spread
+When charter → epic → FR (spec/plan/tasks/walkthrough) docs and their instructions/skills are spread
 across several repos — the norm once AI coding agents are driving that lifecycle instead of one person
 holding it all in their head — git tracks each repo's own history but has no notion of a doc in one
 repo linking to a doc in another, whether a skill's prerequisites are still met, or whether a doc an
 agent depends on quietly disappeared. specmesh sits on top of those independent git repos and adds the
 thing that's missing:
 
-- **Docs Explorer** (activity bar) — every open workspace folder's mission/epic/ADR/FR
+- **Docs Explorer** (activity bar) — every open workspace folder's charter/epic/ADR/FR
   spec+plan+tasks+walkthrough/reference/instructions/skill docs, browsable in one tree, without
   needing to know each repo's folder layout.
 - **Broken cross-repo link detection** — relative markdown links (e.g. one pointing to
@@ -19,12 +19,12 @@ thing that's missing:
 - **Orphan detection** — ADRs/reference docs/FR specs not linked from anywhere else in the graph
   (command: `specmesh: Show Orphaned Docs`).
 - **Missing tracked file detection** — a literal (wildcard-free) `track` entry (e.g. a specific
-  `docs/mission.md`) that no longer resolves to a file is flagged as a red "missing" entry in the tree
+  `docs/charter.md`) that no longer resolves to a file is flagged as a red "missing" entry in the tree
   (command: `specmesh: Show Missing Tracked Files`).
 - **Git decorations reused, not reinvented** — doc entries are wired to their real file's `resourceUri`,
   so VS Code's own git color/badge (modified, added, etc.) shows up on them for free, same as Explorer.
 - **Scaffold the SDLC structure itself** — `specmesh: Scaffold Spec-Driven Development Structure` (also
-  offered as a button right in the Docs view when nothing's tracked yet) sets up `docs/mission.md`,
+  offered as a button right in the Docs view when nothing's tracked yet) sets up `docs/charter.md`,
   `docs/spec-driven-development.md`, `docs/epics/`, per-repo `docs/adr/`, `docs/reference/`,
   `.github/instructions/`, `.github/copilot-instructions.md`, the `new-feature`/`change-request` skills,
   and a `.specmesh.yml` per repo so it all shows up in the tree immediately — generic and safe to run
@@ -42,10 +42,10 @@ thing that's missing:
    types it looks for" below).
 3. Nothing tracked yet? The Docs view itself offers a **Scaffold Spec-Driven Development Structure** button
    right there — no need to hunt through the Command Palette. It asks a couple of questions and writes
-   `docs/mission.md`, `docs/spec-driven-development.md`, `docs/epics/`, per-repo `docs/adr/`,
+   `docs/charter.md`, `docs/spec-driven-development.md`, `docs/epics/`, per-repo `docs/adr/`,
    `docs/reference/`, `.github/instructions/`, `.github/copilot-instructions.md`, the `new-feature`/
    `change-request` skills, and a `.specmesh.yml` per repo (so everything it just created shows up in the
-   tree immediately, mission/epic included) — never overwriting anything that already exists.
+   tree immediately, charter/epic included) — never overwriting anything that already exists.
 4. Already have docs but in a different shape, or want to track/exclude something specific? Edit that
    repo's `.specmesh.yml` (auto-created by step 3, or add your own) — see "Per-repo config" below. Changes
    are picked up automatically, no reload needed. Every repo's node in the tree also has its own pinned
@@ -57,7 +57,7 @@ thing that's missing:
    **Delete Doc** action (moves it to the OS trash, with a confirmation first).
 6. Other useful commands: **specmesh: Refresh Docs Index**, **specmesh: Show Orphaned Docs**,
    **specmesh: Show Missing Tracked Files**.
-7. Fill out `docs/mission.md` in the root repo (Problem / Approach / Who this is for / Non-goals), then
+7. Fill out `docs/charter.md` in the root repo (Problem / Approach / Who this is for / Non-goals), then
    start building features from Copilot Chat with the scaffolded `new-feature`/`change-request` skills
    (e.g. `/new-feature <user story>`).
 
@@ -70,9 +70,9 @@ leading `**/`) for crawl speed and so nested scaffolding-kit copies of these fil
 accident. Override or extend the list via the `specmesh.docTypes` setting if your convention differs
 globally, or per-repo via `.specmesh.yml` below.
 
-`mission`/`epic` are deliberately **not** in this default list — one mission/epic set belongs to a whole
+`charter`/`epic` are deliberately **not** in this default list — one charter/epic set belongs to a whole
 product, not to every repo, so it's opt-in per repo via `track:` in that repo's `.specmesh.yml` (see the
-root repo's example below), never a global fallback. Otherwise every repo without its own `docs/mission.md`
+root repo's example below), never a global fallback. Otherwise every repo without its own `docs/charter.md`
 would show a false "missing" entry.
 
 ## Tree appearance
@@ -91,13 +91,15 @@ would show a false "missing" entry.
 
 Drop a `.specmesh.yml` at the root of any tracked repo/workspace folder to control exactly what
 specmesh tracks there, without affecting anyone else's repo. It's a normal file you commit to that
-repo, same as `.gitignore`.
+repo, same as `.gitignore`. Your documentation structure doesn't have to match specmesh's defaults or
+even another repo's — add, rename, or remove `track:` entries (or their `glob`s) to match whatever
+folder/file layout that repo actually uses; no code changes or reload needed, specmesh just re-crawls.
 
 ```yaml
 track: # replaces the doc types for THIS repo only (a whitelist, not a blacklist)
-  - type: mission
-    label: Mission
-    glob: "docs/mission.md" # no wildcards -> flagged as "missing" if this file disappears
+  - type: charter
+    label: Charter
+    glob: "docs/charter.md" # no wildcards -> flagged as "missing" if this file disappears
   - type: epic
     label: Epics
     glob: "docs/epics/EPIC-*.md" # has a wildcard -> just enumerated, not missing-checked
@@ -124,7 +126,7 @@ work as manual `#`-mentions in chat.
 | `#specmeshDocs` | Find a tracked doc by folder, type, or title/path text |
 | `#specmeshBrokenLinks` | Check for dead cross-repo/relative links before trusting a doc |
 | `#specmeshOrphans` | Find ADRs/reference docs/FR specs nothing else links to |
-| `#specmeshMissing` | Check a literal tracked file (e.g. `docs/mission.md`) still exists |
+| `#specmeshMissing` | Check a literal tracked file (e.g. `docs/charter.md`) still exists |
 | `#specmeshDocLinks` | See what one specific doc links out to, and whether each resolves |
 | `#specmeshUpdateConfig` | Add/update a repo's `.specmesh.yml` track entry (asks for confirmation first) |
 | `#specmeshHelp` | Ground the agent in specmesh's own README before it answers "how does X work" |
@@ -162,15 +164,15 @@ specmesh deliberately doesn't reinvent git for this:
 `specmesh: Scaffold Spec-Driven Development Structure` (Command Palette) walks through:
 
 1. Which open workspace folder(s) make up this product (skipped if only one is open).
-2. Which of those is the mission/epic root (the repo `docs/mission.md`, `docs/spec-driven-development.md`, and
+2. Which of those is the charter/epic root (the repo `docs/charter.md`, `docs/spec-driven-development.md`, and
    `docs/epics/` live in).
 3. The product name.
 
 It then writes, per repo, whatever doesn't already exist: `docs/adr/`, `docs/reference/`, `.github/instructions/`,
-`.github/copilot-instructions.md` (pointer-only, linking back to the root's mission/SDD docs by relative path),
-and the `new-feature`/`change-request` skills under `.github/skills/`; plus, root-only, `docs/mission.md`,
+`.github/copilot-instructions.md` (pointer-only, linking back to the root's charter/SDD docs by relative path),
+and the `new-feature`/`change-request` skills under `.github/skills/`; plus, root-only, `docs/charter.md`,
 `docs/spec-driven-development.md`, and `docs/epics/`. Templates live in `templates/` in this repo and are
-genericized/token-substituted (`{{PRODUCT_NAME}}`, `{{REPO_LAYOUT}}`, `{{MISSION_DOC_REL}}`, `{{SDD_DOC_REL}}`,
+genericized/token-substituted (`{{PRODUCT_NAME}}`, `{{REPO_LAYOUT}}`, `{{CHARTER_DOC_REL}}`, `{{SDD_DOC_REL}}`,
 `{{EPICS_DIR_REL}}`) — nothing product-specific. It never overwrites an existing file; re-running it after
 editing the generated docs is safe.
 

@@ -1,10 +1,10 @@
 # Workspace structure
 
-- `specmesh` — mission/epic root
+- `specmesh` — charter/epic root
 
 # Spec-driven development
 
-Why this product exists: [docs/mission.md](../docs/mission.md). How mission → epic → FR work breaks down and
+Why this product exists: [docs/charter.md](../docs/charter.md). How charter → epic → FR work breaks down and
 which skill produces what: [docs/spec-driven-development.md](../docs/spec-driven-development.md).
 
 # Coding guidelines
