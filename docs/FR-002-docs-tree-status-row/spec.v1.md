@@ -1,7 +1,7 @@
 # FR-002: Fixed Docs Tree Status Row
 
 **Revision**: 1
-**Status**: Superseded by v2
+**Status**: Superseded by [v2](./spec.v2.md)
 **Repos**: specmesh
 **Created**: 2026-09-11
 **Epic**: [EPIC-001: Docs Explorer Authoring](../epics/EPIC-001-docs-explorer-authoring.md)

@@ -67,7 +67,9 @@ Requirements`, `Out of Scope`, `Assumptions`, `Open Questions`, etc.) — omit e
 2. Within an included section, list **only** the changed/added/removed items, each marked up in place:
    `~~old wording~~ **Now:** new wording` (or `(new)` / `(removed)` for additions/removals). Do not re-list
    unaffected items from that section.
-3. In `spec.v{CURRENT_REV}.md`, change only its `Status` field to `Superseded by v{NEW_REV}` — never touch its body.
+3. In `spec.v{CURRENT_REV}.md`, change only its `Status` field to `Superseded by [v{NEW_REV}](./spec.v{NEW_REV}.md)`
+   (a link, not just text — otherwise nothing links forward to the new revision and specmesh flags it as a false
+   orphan) — never touch its body.
 4. Present the revised spec (point at `spec.v{NEW_REV}.md`).
 5. **Gate.** Use the ask-questions tool: header "Spec Review", question "Approve this spec revision, or make
    changes?", options `Approve` / `Decline` / `Refine` (allow freeform input). Do not proceed on an ordinary chat
