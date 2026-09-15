@@ -2,6 +2,10 @@
 
 All notable changes to the "specmesh" extension are documented in this file.
 
+## [0.9.1] - 2026-09-15
+
+- False orphan tweak
+
 ## [0.9.0] - 2026-09-15
 
 - Document pack refactoring
