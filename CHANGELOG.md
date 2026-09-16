@@ -2,6 +2,11 @@
 
 All notable changes to the "specmesh" extension are documented in this file.
 
+## [0.9.3] - 2026-09-16
+
+- Fixed a false broken-link flag for markdown links written inside inline code spans (backticks), e.g. template
+  placeholder links shown in skill docs.
+
 ## [0.9.1] - 2026-09-15
 
 - False orphan tweak
