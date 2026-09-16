@@ -23,6 +23,15 @@ function existsSafe(target: string): boolean {
   }
 }
 
+/** Merges `.specmesh/**` (the central doc-tracking repo's own storage) into a doc type's `exclude` list,
+ * de-duplicating if it's already present. Ensures `.specmesh/spec.git`'s contents are never themselves
+ * matched as a tracked doc, even by a broad custom glob like `**\/*.md`. */
+export function withSpecmeshExclude(exclude?: string[]): string[] {
+  const merged = new Set(exclude ?? []);
+  merged.add(".specmesh/**");
+  return [...merged];
+}
+
 export interface CrawlResult {
   nodes: DocNode[];
   missingProblems: Problem[];
@@ -80,13 +89,11 @@ export async function crawlWorkspace(): Promise<CrawlResult> {
 
     for (const def of defs) {
       const pattern = new vscode.RelativePattern(folder, def.glob);
-      const excludePattern =
-        def.exclude && def.exclude.length > 0
-          ? new vscode.RelativePattern(
-              folder,
-              def.exclude.length === 1 ? def.exclude[0] : `{${def.exclude.join(",")}}`
-            )
-          : undefined;
+      const mergedExclude = withSpecmeshExclude(def.exclude);
+      const excludePattern = new vscode.RelativePattern(
+        folder,
+        mergedExclude.length === 1 ? mergedExclude[0] : `{${mergedExclude.join(",")}}`
+      );
       const files = await vscode.workspace.findFiles(pattern, excludePattern);
 
       if (files.length === 0 && isLiteralGlob(def.glob)) {

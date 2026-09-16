@@ -16,7 +16,8 @@ duplicating the file on disk or disturbing each child repo's own git history for
 | FR  | Title | Status      |
 | --- | ----- | ----------- |
 | [FR-008](../FR-008-repo-manifest/spec.v1.md) | Declarative repo manifest (`repos:` in `.specmesh.yml`) | Done |
-| TBD | Cross-repo detached doc tracking (central git-plumbing history) | Not started |
+| [FR-009](../FR-009-cross-repo-doc-tracking/spec.v1.md) | Cross-repo detached doc tracking (central git-plumbing history) | Done |
+| FR-010 | Central doc history as a custom Source Control view | Not started |
 
 ## Dependencies
 
@@ -32,3 +33,6 @@ duplicating the file on disk or disturbing each child repo's own git history for
 
 - 2026-09-16: Epic created.
 - 2026-09-16: Linked ADR-002 (detached-tracking mechanism decision).
+- 2026-09-16: FR-009 done. Added FR-010 (custom Source Control view for central history) as a follow-up story —
+  the built-in Git view can't render a bare repo with an externally-set `--work-tree`, so today's visibility is
+  limited to the `Show Central Doc History` output-channel command.

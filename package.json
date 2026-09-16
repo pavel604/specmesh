@@ -229,6 +229,22 @@
         "command": "specmesh.deleteDoc",
         "title": "specmesh: Delete Doc",
         "icon": "$(trash)"
+      },
+      {
+        "command": "specmesh.enableCentralTracking",
+        "title": "specmesh: Enable Cross-Repo Doc Tracking"
+      },
+      {
+        "command": "specmesh.migrateRepoDocs",
+        "title": "specmesh: Migrate Repo Docs to Central Tracking"
+      },
+      {
+        "command": "specmesh.untrackRepoDocs",
+        "title": "specmesh: Untrack Repo from Central Tracking"
+      },
+      {
+        "command": "specmesh.showCentralHistory",
+        "title": "specmesh: Show Central Doc History"
       }
     ],
     "submenus": [
@@ -262,6 +278,22 @@
         {
           "command": "specmesh.scaffoldSdlc",
           "group": "2_specmesh"
+        },
+        {
+          "command": "specmesh.enableCentralTracking",
+          "group": "3_specmesh"
+        },
+        {
+          "command": "specmesh.migrateRepoDocs",
+          "group": "3_specmesh"
+        },
+        {
+          "command": "specmesh.untrackRepoDocs",
+          "group": "3_specmesh"
+        },
+        {
+          "command": "specmesh.showCentralHistory",
+          "group": "3_specmesh"
         }
       ],
       "view/item/context": [
