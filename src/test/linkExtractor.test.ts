@@ -37,6 +37,14 @@ suite("extractMarkdownLinks", () => {
     assert.equal(links[1].lineIndex, 2);
   });
 
+  test("skips links inside inline code spans", () => {
+    const content = "change only `Status` field to `Superseded by [v2](./spec.v2.md)` here";
+
+    const links = extractMarkdownLinks(content);
+
+    assert.equal(links.length, 0);
+  });
+
   test("skips links inside fenced code blocks", () => {
     const content = [
       "[real](real.md)",
