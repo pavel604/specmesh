@@ -5,7 +5,7 @@ import { parseFrontMatter } from "./frontMatter";
 import { extractMarkdownLinks } from "./linkExtractor";
 import { getDocTypeDefinitions } from "./docTypes";
 import { isLiteralGlob, loadRepoConfig } from "./repoConfig";
-import { DocLink, DocNode, Problem } from "../model/types";
+import { DeclaredRepo, DocLink, DocNode, Problem } from "../model/types";
 
 function resolveLinkTarget(fromFile: string, target: string): string | null {
   const withoutAnchor = target.split("#")[0];
@@ -29,6 +29,8 @@ export interface CrawlResult {
   /** each folder's effective doc-type order (its own .specmesh.yml `track:` order, or the global default),
    * so the tree can render category rows in that same order instead of a hardcoded one. */
   categoryOrder: Map<string, string[]>;
+  /** child repos declared via .specmesh.yml `repos:`, across all workspace folders */
+  repos: DeclaredRepo[];
 }
 
 export async function crawlWorkspace(): Promise<CrawlResult> {
@@ -38,11 +40,43 @@ export async function crawlWorkspace(): Promise<CrawlResult> {
   const missingProblems: Problem[] = [];
   const categoryOrder = new Map<string, string[]>();
   const seenPaths = new Set<string>();
+  const repos: DeclaredRepo[] = [];
 
   for (const folder of folders) {
     const repoConfig = await loadRepoConfig(folder);
     const defs = repoConfig.track ?? globalDefs;
     categoryOrder.set(folder.name, defs.map((d) => d.type));
+
+    for (const message of repoConfig.repoErrors ?? []) {
+      missingProblems.push({
+        kind: "missing",
+        docId: `${folder.name}::repo-manifest-error:${message}`,
+        absolutePath: path.join(folder.uri.fsPath, ".specmesh.yml"),
+        message,
+        workspaceFolderName: folder.name,
+        docType: "repo-manifest",
+        categoryLabel: "Declared Repos",
+      });
+    }
+
+    for (const repo of repoConfig.repos ?? []) {
+      const repoPath = path.join(folder.uri.fsPath, repo.path);
+      const present = existsSafe(repoPath);
+      repos.push({ ...repo, workspaceFolderName: folder.name, present });
+
+      if (!present) {
+        missingProblems.push({
+          kind: "missing",
+          docId: `${folder.name}::missing-repo:${repo.path}`,
+          absolutePath: repoPath,
+          message: `Declared repo "${repo.name}" not found at "${repo.path}"`,
+          workspaceFolderName: folder.name,
+          docType: "repo-manifest",
+          categoryLabel: "Declared Repos",
+          expectedPath: repo.path,
+        });
+      }
+    }
 
     for (const def of defs) {
       const pattern = new vscode.RelativePattern(folder, def.glob);
@@ -111,6 +145,6 @@ export async function crawlWorkspace(): Promise<CrawlResult> {
     }
   }
 
-  return { nodes, missingProblems, categoryOrder };
+  return { nodes, missingProblems, categoryOrder, repos };
 }
 

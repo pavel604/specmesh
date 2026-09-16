@@ -131,6 +131,22 @@
         }
       },
       {
+        "name": "specmesh_list_repos",
+        "displayName": "List specmesh Declared Repos",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "specmeshRepos",
+        "modelDescription": "Lists child repos declared via a .specmesh.yml 'repos' list (name, remote, relative path, and whether the path currently exists on disk). Use to answer 'which repos make up this workspace' or 'is a declared repo missing/not cloned yet'.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "folder": {
+              "type": "string",
+              "description": "Restrict to this workspace folder name."
+            }
+          }
+        }
+      },
+      {
         "name": "specmesh_update_track_entry",
         "displayName": "Update specmesh Track Entry",
         "canBeReferencedInPrompt": true,

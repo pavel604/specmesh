@@ -53,3 +53,16 @@ export interface Problem {
   categoryLabel?: string;
   expectedPath?: string;
 }
+
+export interface RepoManifestEntry {
+  name: string;
+  remote: string;
+  /** relative to the folder containing the .specmesh.yml that declared it */
+  path: string;
+}
+
+export interface DeclaredRepo extends RepoManifestEntry {
+  workspaceFolderName: string;
+  /** whether `path` currently exists on disk */
+  present: boolean;
+}

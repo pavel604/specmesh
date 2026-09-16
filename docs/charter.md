@@ -34,8 +34,11 @@ which plain git or a single-repo file explorer gives them today.
 
 ## Non-goals
 
-- Not a replacement for git — change tracking/diffs/history are deliberately left to each doc's own repo and
-  VS Code's built-in git integration, not reimplemented by specmesh.
+- Not a general-purpose replacement for git — each child repo's own source code history/diffs/branches stay
+  exactly where they are today, using that repo's own git and VS Code's built-in git integration, never
+  reimplemented by specmesh. The one deliberate exception: doc files can additionally be tracked in a separate,
+  detached commit history spanning multiple repos, because plain git has no mechanism of its own for that — see
+  docs/roadmap.md for the mechanism.
 - Not a hosted/cloud index — MVP is local-only; an aggregated cross-repo snapshot service is a deliberately
   deferred later phase.
 - Not a general-purpose documentation or wiki tool — it only tracks the specific doc types used by the
@@ -43,5 +46,7 @@ which plain git or a single-repo file explorer gives them today.
 
 ## Changelog
 
+- 2026-09-16: Narrowed the "not a replacement for git" non-goal to source code history specifically, carving
+  out an explicit exception for a detached, cross-repo doc commit history (see docs/roadmap.md).
 - 2026-09-11: Initial mission drafted from README.md.
 - 2026-09-15: Renamed mission.md to charter.md (clearer, more bounded name for this doc's purpose).
