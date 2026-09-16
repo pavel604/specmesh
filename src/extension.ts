@@ -7,8 +7,9 @@ import { scaffoldSdlc } from "./scaffold/scaffold";
 import { openOrCreateConfig, addNewDoc } from "./scaffold/newDoc";
 import { registerSpecmeshTools } from "./tools/specmeshTools";
 import { DocNode } from "./model/types";
-import { CentralSyncScheduler, enableCentralTracking, showCentralHistory } from "./git/specRepo";
+import { CentralSyncScheduler, enableCentralTracking, findSpecGitRoot, showCentralHistory } from "./git/specRepo";
 import { migrateRepoToCentral, pickRepoTarget, untrackRepoFromCentral } from "./git/repoMigration";
+import { ensureCentralScmProvider, refreshCentralScm } from "./git/centralScm";
 
 async function fileExists(uri: vscode.Uri): Promise<boolean> {
   try {
@@ -67,6 +68,8 @@ export function activate(context: vscode.ExtensionContext): void {
     outputChannel.appendLine(
       `specmesh: indexed ${nodes.length} docs, ${brokenLinks} broken link(s), ${orphans} orphan(s), ${missing} missing tracked file(s).`
     );
+
+    await refreshCentralScm();
   };
 
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
@@ -79,6 +82,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const watcher = vscode.workspace.createFileSystemWatcher("**/*.md");
   const syncScheduler = new CentralSyncScheduler(context, outputChannel);
+  ensureCentralScmProvider(findSpecGitRoot(), context, outputChannel, syncScheduler);
   watcher.onDidChange((uri) => {
     scheduleRefresh();
     syncScheduler.scheduleSync(uri.fsPath, "upsert");
@@ -154,7 +158,11 @@ export function activate(context: vscode.ExtensionContext): void {
       await refresh();
     }),
     vscode.commands.registerCommand("specmesh.enableCentralTracking", async () => {
-      await enableCentralTracking(outputChannel);
+      const root = await enableCentralTracking(outputChannel);
+      ensureCentralScmProvider(root, context, outputChannel, syncScheduler);
+    }),
+    vscode.commands.registerCommand("specmesh.refreshCentralScm", async () => {
+      await refreshCentralScm();
     }),
     vscode.commands.registerCommand("specmesh.migrateRepoDocs", async () => {
       const target = await pickRepoTarget();

@@ -13,6 +13,9 @@
     "Other"
   ],
   "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -245,6 +248,11 @@
       {
         "command": "specmesh.showCentralHistory",
         "title": "specmesh: Show Central Doc History"
+      },
+      {
+        "command": "specmesh.refreshCentralScm",
+        "title": "specmesh: Refresh Central Doc Status",
+        "icon": "$(refresh)"
       }
     ],
     "submenus": [
@@ -306,6 +314,18 @@
           "command": "specmesh.deleteDoc",
           "when": "view == specmesh.docsExplorer && viewItem == doc",
           "group": "7_modification"
+        }
+      ],
+      "scm/title": [
+        {
+          "command": "specmesh.refreshCentralScm",
+          "when": "scmProvider == specmeshCentral",
+          "group": "navigation"
+        },
+        {
+          "command": "specmesh.showCentralHistory",
+          "when": "scmProvider == specmeshCentral",
+          "group": "navigation"
         }
       ]
     },

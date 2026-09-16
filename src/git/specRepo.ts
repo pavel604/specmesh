@@ -28,7 +28,7 @@ export function findSpecGitRoot(): vscode.WorkspaceFolder | undefined {
   return undefined;
 }
 
-function gitDirFor(root: vscode.WorkspaceFolder): string {
+export function gitDirFor(root: vscode.WorkspaceFolder): string {
   return path.join(root.uri.fsPath, SPEC_GIT_RELATIVE_PATH);
 }
 
@@ -140,7 +140,7 @@ export async function setRepoUntracked(
   await context.workspaceState.update(UNTRACKED_REPOS_KEY, next);
 }
 
-function isPathUntracked(context: vscode.ExtensionContext, absolutePath: string): boolean {
+export function isPathUntracked(context: vscode.ExtensionContext, absolutePath: string): boolean {
   const untracked = context.workspaceState.get<string[]>(UNTRACKED_REPOS_KEY, []);
   return untracked.some((repoPath) => isUnderPath(repoPath, absolutePath));
 }
@@ -161,6 +161,10 @@ export class CentralSyncScheduler {
   private pending = new Map<string, SyncKind>();
   private timer: ReturnType<typeof setTimeout> | undefined;
   private warned = false;
+  private readonly _onDidSync = new vscode.EventEmitter<void>();
+  /** Fires after each successful central commit, so a UI (e.g. the central Source Control view) can refresh
+   * without polling. Does not fire for a no-op ("nothing to commit") flush. */
+  readonly onDidSync = this._onDidSync.event;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -231,6 +235,7 @@ export class CentralSyncScheduler {
           this.outputChannel.appendLine(
             `specmesh: synced ${changedRelPaths.length} doc(s) to .specmesh/spec.git`
           );
+          this._onDidSync.fire();
         } catch (err) {
           const message = (err as Error).message;
           if (!/nothing to commit|nothing added to commit/i.test(message)) {
