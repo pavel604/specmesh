@@ -18,6 +18,7 @@ duplicating the file on disk or disturbing each child repo's own git history for
 | [FR-008](../FR-008-repo-manifest/spec.v1.md) | Declarative repo manifest (`repos:` in `.specmesh.yml`) | Done |
 | [FR-009](../FR-009-cross-repo-doc-tracking/spec.v1.md) | Cross-repo detached doc tracking (central git-plumbing history) | Done |
 | [FR-010](../FR-010-central-doc-history-scm-view/spec.v1.md) | Central doc history as a custom Source Control view | Done |
+| [FR-011](../FR-011-central-scm-branch-commit/spec.v1.md) | Branch, stage & commit in the central SCM view | Done |
 
 ## Dependencies
 
@@ -38,3 +39,13 @@ duplicating the file on disk or disturbing each child repo's own git history for
   limited to the `Show Central Doc History` output-channel command.
 - 2026-09-16: FR-010 done. Read-only "specmesh (central)" Source Control view listing every tracked doc's sync
   status, with diff-on-click. Kept intentionally read-only (no stage/commit/branch UI) per user confirmation.
+- 2026-09-17: Added FR-011 to pick up the read-only view's postponed stage/commit/branch UI, replacing FR-009's
+  auto-commit-on-save with fully manual central sync.
+- 2026-09-17: FR-011 done. Staged/Changes groups with stage/unstage/commit/branch-switch, replacing FR-009's
+  auto-commit-on-save. Fixed two review-round issues before sign-off: batched/parallelized git calls and
+  crawl-result caching so stage/unstage/commit stopped re-crawling the whole workspace per action, and
+  consolidated the duplicate branch-switch icon into a single "..." submenu (matching the built-in Git view's
+  Commit-icon-plus-"..."-menu convention). Also added an "Undo Last Commit" action (soft reset to the parent
+  commit) before final sign-off, and fixed a bug found while testing it: staging silently skipped docs inside
+  child repos (`git add`'s submodule-boundary check), fixed by staging via low-level `hash-object`/
+  `update-index --index-info` plumbing instead.

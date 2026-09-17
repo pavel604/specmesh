@@ -1,5 +1,11 @@
 import * as assert from "node:assert/strict";
-import { parseLsTree, isPendingSync, classifySyncStatus } from "../git/centralScm";
+import {
+  computeChangeGroups,
+  parseBranchList,
+  parseCheckoutConflictFiles,
+  parseLsFilesStage,
+  parseLsTree,
+} from "../git/centralScm";
 
 suite("parseLsTree", () => {
   test("parses mode/type/sha/path lines into a path -> sha map", () => {
@@ -23,30 +29,99 @@ suite("parseLsTree", () => {
   });
 });
 
-suite("isPendingSync", () => {
-  test("is false when the on-disk hash matches the committed hash", () => {
-    assert.equal(isPendingSync("abc123", "abc123"), false);
+suite("parseLsFilesStage", () => {
+  test("parses mode/sha/stage/path lines into a path -> sha map", () => {
+    const output = [
+      "100644 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 0\tdocs/charter.md",
+      "100644 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb 0\tdocs/adr/ADR-001.md",
+    ].join("\n");
+    const result = parseLsFilesStage(output);
+    assert.equal(result.size, 2);
+    assert.equal(result.get("docs/charter.md"), "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    assert.equal(result.get("docs/adr/ADR-001.md"), "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
   });
 
-  test("is true when the on-disk hash differs from the committed hash", () => {
-    assert.equal(isPendingSync("abc123", "def456"), true);
+  test("returns an empty map for blank output", () => {
+    assert.equal(parseLsFilesStage("").size, 0);
   });
 });
 
-suite("classifySyncStatus", () => {
-  test("is 'new' when there's no committed sha yet", () => {
-    assert.equal(classifySyncStatus(undefined, "abc123"), "new");
+suite("computeChangeGroups", () => {
+  test("a path identical across HEAD, index, and disk appears in neither group", () => {
+    const head = new Map([["docs/charter.md", "aaa"]]);
+    const index = new Map([["docs/charter.md", "aaa"]]);
+    const disk = new Map([["docs/charter.md", "aaa"]]);
+    assert.deepEqual(computeChangeGroups(head, index, disk, head.keys()), { staged: [], changes: [] });
   });
 
-  test("is 'pending' when the file no longer exists on disk", () => {
-    assert.equal(classifySyncStatus("abc123", undefined), "pending");
+  test("a staged-only edit (index differs from HEAD, disk matches index) is staged, not changed", () => {
+    const head = new Map([["docs/charter.md", "aaa"]]);
+    const index = new Map([["docs/charter.md", "bbb"]]);
+    const disk = new Map([["docs/charter.md", "bbb"]]);
+    assert.deepEqual(computeChangeGroups(head, index, disk, ["docs/charter.md"]), {
+      staged: ["docs/charter.md"],
+      changes: [],
+    });
   });
 
-  test("is 'pending' when on-disk content differs from the committed sha", () => {
-    assert.equal(classifySyncStatus("abc123", "def456"), "pending");
+  test("an unstaged edit (disk differs from index, index matches HEAD) is a change, not staged", () => {
+    const head = new Map([["docs/charter.md", "aaa"]]);
+    const index = new Map([["docs/charter.md", "aaa"]]);
+    const disk = new Map([["docs/charter.md", "ccc"]]);
+    assert.deepEqual(computeChangeGroups(head, index, disk, ["docs/charter.md"]), {
+      staged: [],
+      changes: ["docs/charter.md"],
+    });
   });
 
-  test("is 'synced' when on-disk content matches the committed sha", () => {
-    assert.equal(classifySyncStatus("abc123", "abc123"), "synced");
+  test("a path can be both staged and changed at once", () => {
+    const head = new Map([["docs/charter.md", "aaa"]]);
+    const index = new Map([["docs/charter.md", "bbb"]]);
+    const disk = new Map([["docs/charter.md", "ccc"]]);
+    assert.deepEqual(computeChangeGroups(head, index, disk, ["docs/charter.md"]), {
+      staged: ["docs/charter.md"],
+      changes: ["docs/charter.md"],
+    });
+  });
+
+  test("a never-committed, never-staged file on disk is a change only", () => {
+    const head = new Map<string, string>();
+    const index = new Map<string, string>();
+    const disk = new Map([["docs/new.md", "ddd"]]);
+    assert.deepEqual(computeChangeGroups(head, index, disk, ["docs/new.md"]), {
+      staged: [],
+      changes: ["docs/new.md"],
+    });
   });
 });
+
+suite("parseBranchList", () => {
+  test("marks the current branch from its leading '*'", () => {
+    const result = parseBranchList("* main\n  feature-x\n");
+    assert.deepEqual(result, [
+      { name: "main", current: true },
+      { name: "feature-x", current: false },
+    ]);
+  });
+
+  test("returns an empty list for blank output", () => {
+    assert.deepEqual(parseBranchList(""), []);
+  });
+});
+
+suite("parseCheckoutConflictFiles", () => {
+  test("extracts the listed files from git's overwrite-conflict error", () => {
+    const stderr = [
+      "error: Your local changes to the following files would be overwritten by checkout:",
+      "\tdocs/charter.md",
+      "Please commit your changes or stash them before you switch branches.",
+      "Aborting",
+    ].join("\n");
+    assert.deepEqual(parseCheckoutConflictFiles(stderr), ["docs/charter.md"]);
+  });
+
+  test("returns an empty list for an unrelated error", () => {
+    assert.deepEqual(parseCheckoutConflictFiles("fatal: not a git repository"), []);
+  });
+});
+

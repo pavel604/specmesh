@@ -253,11 +253,50 @@
         "command": "specmesh.refreshCentralScm",
         "title": "specmesh: Refresh Central Doc Status",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "specmesh.stageCentralChange",
+        "title": "specmesh: Stage Change",
+        "icon": "$(add)"
+      },
+      {
+        "command": "specmesh.unstageCentralChange",
+        "title": "specmesh: Unstage Change",
+        "icon": "$(remove)"
+      },
+      {
+        "command": "specmesh.stageAllCentralChanges",
+        "title": "specmesh: Stage All Changes",
+        "icon": "$(add)"
+      },
+      {
+        "command": "specmesh.unstageAllCentralChanges",
+        "title": "specmesh: Unstage All Changes",
+        "icon": "$(remove)"
+      },
+      {
+        "command": "specmesh.commitCentral",
+        "title": "specmesh: Commit",
+        "icon": "$(check)"
+      },
+      {
+        "command": "specmesh.uncommitCentral",
+        "title": "specmesh: Undo Last Commit"
+      },
+      {
+        "command": "specmesh.switchCentralBranch",
+        "title": "specmesh: Switch Central Branch\u2026",
+        "icon": "$(git-branch)"
       }
     ],
     "submenus": [
       {
         "id": "specmesh.docsExplorerActions",
+        "label": "More Actions",
+        "icon": "$(ellipsis)"
+      },
+      {
+        "id": "specmesh.centralScmActions",
         "label": "More Actions",
         "icon": "$(ellipsis)"
       }
@@ -318,14 +357,56 @@
       ],
       "scm/title": [
         {
-          "command": "specmesh.refreshCentralScm",
+          "command": "specmesh.commitCentral",
           "when": "scmProvider == specmeshCentral",
-          "group": "navigation"
+          "group": "navigation@1"
+        },
+        {
+          "submenu": "specmesh.centralScmActions",
+          "when": "scmProvider == specmeshCentral",
+          "group": "navigation@2"
+        }
+      ],
+      "specmesh.centralScmActions": [
+        {
+          "command": "specmesh.switchCentralBranch",
+          "group": "1_specmesh"
+        },
+        {
+          "command": "specmesh.refreshCentralScm",
+          "group": "1_specmesh"
         },
         {
           "command": "specmesh.showCentralHistory",
-          "when": "scmProvider == specmeshCentral",
-          "group": "navigation"
+          "group": "1_specmesh"
+        },
+        {
+          "command": "specmesh.uncommitCentral",
+          "group": "2_specmesh"
+        }
+      ],
+      "scm/resourceGroup/context": [
+        {
+          "command": "specmesh.stageAllCentralChanges",
+          "when": "scmProvider == specmeshCentral && scmResourceGroup == changes",
+          "group": "inline"
+        },
+        {
+          "command": "specmesh.unstageAllCentralChanges",
+          "when": "scmProvider == specmeshCentral && scmResourceGroup == staged",
+          "group": "inline"
+        }
+      ],
+      "scm/resourceState/context": [
+        {
+          "command": "specmesh.stageCentralChange",
+          "when": "scmProvider == specmeshCentral && scmResourceGroup == changes",
+          "group": "inline"
+        },
+        {
+          "command": "specmesh.unstageCentralChange",
+          "when": "scmProvider == specmeshCentral && scmResourceGroup == staged",
+          "group": "inline"
         }
       ]
     },

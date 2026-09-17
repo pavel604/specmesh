@@ -7,9 +7,19 @@ import { scaffoldSdlc } from "./scaffold/scaffold";
 import { openOrCreateConfig, addNewDoc } from "./scaffold/newDoc";
 import { registerSpecmeshTools } from "./tools/specmeshTools";
 import { DocNode } from "./model/types";
-import { CentralSyncScheduler, enableCentralTracking, findSpecGitRoot, showCentralHistory } from "./git/specRepo";
+import { enableCentralTracking, findSpecGitRoot, showCentralHistory } from "./git/specRepo";
 import { migrateRepoToCentral, pickRepoTarget, untrackRepoFromCentral } from "./git/repoMigration";
-import { ensureCentralScmProvider, refreshCentralScm } from "./git/centralScm";
+import {
+  commitCentral,
+  ensureCentralScmProvider,
+  refreshCentralScm,
+  stageAllCentralChanges,
+  stageCentralChange,
+  switchCentralBranch,
+  uncommitCentral,
+  unstageAllCentralChanges,
+  unstageCentralChange,
+} from "./git/centralScm";
 
 async function fileExists(uri: vscode.Uri): Promise<boolean> {
   try {
@@ -69,7 +79,7 @@ export function activate(context: vscode.ExtensionContext): void {
       `specmesh: indexed ${nodes.length} docs, ${brokenLinks} broken link(s), ${orphans} orphan(s), ${missing} missing tracked file(s).`
     );
 
-    await refreshCentralScm();
+    await refreshCentralScm(nodes);
   };
 
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
@@ -81,20 +91,10 @@ export function activate(context: vscode.ExtensionContext): void {
   };
 
   const watcher = vscode.workspace.createFileSystemWatcher("**/*.md");
-  const syncScheduler = new CentralSyncScheduler(context, outputChannel);
-  ensureCentralScmProvider(findSpecGitRoot(), context, outputChannel, syncScheduler);
-  watcher.onDidChange((uri) => {
-    scheduleRefresh();
-    syncScheduler.scheduleSync(uri.fsPath, "upsert");
-  });
-  watcher.onDidCreate((uri) => {
-    scheduleRefresh();
-    syncScheduler.scheduleSync(uri.fsPath, "upsert");
-  });
-  watcher.onDidDelete((uri) => {
-    scheduleRefresh();
-    syncScheduler.scheduleSync(uri.fsPath, "remove");
-  });
+  ensureCentralScmProvider(findSpecGitRoot(), context, outputChannel);
+  watcher.onDidChange(() => scheduleRefresh());
+  watcher.onDidCreate(() => scheduleRefresh());
+  watcher.onDidDelete(() => scheduleRefresh());
 
   const configWatcher = vscode.workspace.createFileSystemWatcher("**/.specmesh.yml");
   configWatcher.onDidChange(scheduleRefresh);
@@ -159,10 +159,31 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand("specmesh.enableCentralTracking", async () => {
       const root = await enableCentralTracking(outputChannel);
-      ensureCentralScmProvider(root, context, outputChannel, syncScheduler);
+      ensureCentralScmProvider(root, context, outputChannel);
     }),
     vscode.commands.registerCommand("specmesh.refreshCentralScm", async () => {
-      await refreshCentralScm();
+      await refreshCentralScm((await crawlWorkspace()).nodes);
+    }),
+    vscode.commands.registerCommand("specmesh.stageCentralChange", async (item: { resourceUri: vscode.Uri }) => {
+      await stageCentralChange(item.resourceUri);
+    }),
+    vscode.commands.registerCommand("specmesh.unstageCentralChange", async (item: { resourceUri: vscode.Uri }) => {
+      await unstageCentralChange(item.resourceUri);
+    }),
+    vscode.commands.registerCommand("specmesh.stageAllCentralChanges", async () => {
+      await stageAllCentralChanges();
+    }),
+    vscode.commands.registerCommand("specmesh.unstageAllCentralChanges", async () => {
+      await unstageAllCentralChanges();
+    }),
+    vscode.commands.registerCommand("specmesh.commitCentral", async () => {
+      await commitCentral();
+    }),
+    vscode.commands.registerCommand("specmesh.uncommitCentral", async () => {
+      await uncommitCentral();
+    }),
+    vscode.commands.registerCommand("specmesh.switchCentralBranch", async () => {
+      await switchCentralBranch(outputChannel);
     }),
     vscode.commands.registerCommand("specmesh.migrateRepoDocs", async () => {
       const target = await pickRepoTarget();

@@ -5,11 +5,6 @@ import { execGit, isGitAvailable } from "./gitPlumbing";
 
 const SPEC_GIT_RELATIVE_PATH = path.join(".specmesh", "spec.git");
 const UNTRACKED_REPOS_KEY = "specmesh.untrackedRepos";
-const SYNC_DEBOUNCE_MS = 500;
-
-function toPosix(p: string): string {
-  return p.split(path.sep).join("/");
-}
 
 /** Whether `child` is `parent` itself or nested under it. */
 export function isUnderPath(parent: string, child: string): boolean {
@@ -143,117 +138,6 @@ export async function setRepoUntracked(
 export function isPathUntracked(context: vscode.ExtensionContext, absolutePath: string): boolean {
   const untracked = context.workspaceState.get<string[]>(UNTRACKED_REPOS_KEY, []);
   return untracked.some((repoPath) => isUnderPath(repoPath, absolutePath));
-}
-
-/** `paths.length` short-circuits to a count-only summary once the list would make an unwieldy commit subject
- * line; short lists are spelled out so `git log --oneline` still shows something useful. */
-export function formatCommitMessage(paths: string[]): string {
-  if (paths.length <= 5) {
-    return `specmesh: sync ${paths.length} doc(s): ${paths.join(", ")}`;
-  }
-  return `specmesh: sync ${paths.length} doc(s)`;
-}
-
-type SyncKind = "upsert" | "remove";
-
-/** Debounces per-save doc changes and batches them into one `.specmesh/spec.git` commit per quiet period. */
-export class CentralSyncScheduler {
-  private pending = new Map<string, SyncKind>();
-  private timer: ReturnType<typeof setTimeout> | undefined;
-  private warned = false;
-  private readonly _onDidSync = new vscode.EventEmitter<void>();
-  /** Fires after each successful central commit, so a UI (e.g. the central Source Control view) can refresh
-   * without polling. Does not fire for a no-op ("nothing to commit") flush. */
-  readonly onDidSync = this._onDidSync.event;
-
-  constructor(
-    private readonly context: vscode.ExtensionContext,
-    private readonly outputChannel: vscode.OutputChannel
-  ) {}
-
-  scheduleSync(absolutePath: string, kind: SyncKind): void {
-    if (isPathUntracked(this.context, absolutePath)) {
-      return;
-    }
-    if (!findSpecGitRoot()) {
-      return;
-    }
-    this.pending.set(absolutePath, kind);
-    if (this.timer) {
-      clearTimeout(this.timer);
-    }
-    this.timer = setTimeout(() => void this.flush(), SYNC_DEBOUNCE_MS);
-  }
-
-  private async flush(): Promise<void> {
-    const root = findSpecGitRoot();
-    const entries = [...this.pending.entries()];
-    this.pending.clear();
-    if (!root || entries.length === 0) {
-      return;
-    }
-
-    const gitDir = gitDirFor(root);
-    const workTree = root.uri.fsPath;
-    const changedRelPaths: string[] = [];
-
-    try {
-      for (const [absolutePath, kind] of entries) {
-        const relPath = toPosix(path.relative(workTree, absolutePath));
-        if (kind === "upsert") {
-          if (!fs.existsSync(absolutePath)) {
-            continue;
-          }
-          const sha = await execGit(["--git-dir", gitDir, "hash-object", "-w", absolutePath]);
-          await execGit([
-            "--git-dir",
-            gitDir,
-            "--work-tree",
-            workTree,
-            "update-index",
-            "--add",
-            "--cacheinfo",
-            `100644,${sha},${relPath}`,
-          ]);
-        } else {
-          await execGit(["--git-dir", gitDir, "--work-tree", workTree, "update-index", "--remove", "--", relPath]);
-        }
-        changedRelPaths.push(relPath);
-      }
-
-      if (changedRelPaths.length > 0) {
-        try {
-          await execGit([
-            "--git-dir",
-            gitDir,
-            "--work-tree",
-            workTree,
-            "commit",
-            "-m",
-            formatCommitMessage(changedRelPaths),
-          ]);
-          this.outputChannel.appendLine(
-            `specmesh: synced ${changedRelPaths.length} doc(s) to .specmesh/spec.git`
-          );
-          this._onDidSync.fire();
-        } catch (err) {
-          const message = (err as Error).message;
-          if (!/nothing to commit|nothing added to commit/i.test(message)) {
-            throw err;
-          }
-        }
-      }
-      this.warned = false;
-    } catch (err) {
-      this.outputChannel.appendLine(`specmesh: central doc sync failed: ${(err as Error).message}`);
-      if (!this.warned) {
-        this.warned = true;
-        vscode.window.showWarningMessage(
-          "specmesh: central doc tracking sync failed. See the specmesh output channel for details."
-        );
-      }
-    }
-  }
 }
 
 /** Prints `.specmesh/spec.git`'s recent commits to `outputChannel`. */

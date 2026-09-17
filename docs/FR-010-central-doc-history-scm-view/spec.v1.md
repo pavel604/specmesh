@@ -44,8 +44,10 @@ itself remains fully automatic (FR-009's debounced auto-commit, no manual stagin
 ## Out of Scope
 
 - Any staging/unstaging or commit-via-input-box workflow — central sync stays fully automatic (FR-009); the
-  input box is not wired to an accept-commit command.
-- Branch, merge, push, pull, or any other remote operation on the central repo.
+  input box is not wired to an accept-commit command. (Purposely postponed to keep this FR's scope small; picked
+  up by [FR-011](../FR-011-central-scm-branch-commit/spec.v1.md).)
+- Branch, merge, push, pull, or any other remote operation on the central repo. (Branch switching purposely
+  postponed; picked up by [FR-011](../FR-011-central-scm-branch-commit/spec.v1.md).)
 - Per-child-repo Source Control entries — this is one single entry for the whole central repo, matching FR-009's
   cross-repo scope.
 - Rendering full commit-log history inside the Source Control view itself — that remains the existing

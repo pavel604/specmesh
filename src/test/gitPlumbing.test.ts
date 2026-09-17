@@ -1,20 +1,6 @@
 import * as assert from "node:assert/strict";
-import { formatCommitMessage } from "../git/specRepo";
 import { computeGitignoreAdditions, computeGitignoreRemovals } from "../git/repoMigration";
 import { withSpecmeshExclude } from "../crawler/crawler";
-
-suite("formatCommitMessage", () => {
-  test("spells out short lists", () => {
-    const message = formatCommitMessage(["docs/adr/ADR-001.md", "docs/charter.md"]);
-    assert.equal(message, "specmesh: sync 2 doc(s): docs/adr/ADR-001.md, docs/charter.md");
-  });
-
-  test("falls back to a count once the list is long", () => {
-    const paths = ["a.md", "b.md", "c.md", "d.md", "e.md", "f.md"];
-    const message = formatCommitMessage(paths);
-    assert.equal(message, "specmesh: sync 6 doc(s)");
-  });
-});
 
 suite("withSpecmeshExclude", () => {
   test("adds .specmesh/** when there's no existing exclude list", () => {
