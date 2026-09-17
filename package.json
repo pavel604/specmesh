@@ -2,7 +2,7 @@
   "name": "specmesh",
   "displayName": "specmesh",
   "description": "Cross-repo documentation graph for the agentic spec-driven development lifecycle: indexes charter/epic/FR/ADR/reference/instructions/skill docs across every open workspace folder (charter/epic opt-in per repo), flags broken cross-repo links, orphaned docs, and missing tracked files.",
-  "version": "0.9.3",
+  "version": "0.10.0",
   "publisher": "specmesh",
   "license": "MIT",
   "private": true,
@@ -285,12 +285,12 @@
       },
       {
         "command": "specmesh.switchCentralBranch",
-        "title": "Switch Central Branch\u2026",
+        "title": "Switch Central Branch…",
         "icon": "$(git-branch)"
       },
       {
         "command": "specmesh.manageCentralRemotes",
-        "title": "Manage Remotes\u2026"
+        "title": "Manage Remotes…"
       },
       {
         "command": "specmesh.pushCentral",
