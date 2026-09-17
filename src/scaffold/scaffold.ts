@@ -3,6 +3,7 @@ import * as path from "path";
 import { stringify as stringifyYaml } from "yaml";
 import { DocTypeDefinition } from "../model/types";
 import { PatternPack, getBuiltinPack } from "./patterns";
+import { enableCentralTracking } from "../git/specRepo";
 
 function toPosix(p: string): string {
   return p.split(path.sep).join("/");
@@ -168,5 +169,7 @@ export async function scaffoldSdlc(
     skipped.forEach((p) => outputChannel.appendLine(`  = ${p}`));
   }
   outputChannel.show();
+
+  await enableCentralTracking(outputChannel, root);
 }
 

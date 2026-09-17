@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { DocNode, Problem } from "../model/types";
+import { DeclaredRepo, DocNode, Problem } from "../model/types";
 import { getDocTypeDefinitions } from "../crawler/docTypes";
 
 type LabelFormat = "title" | "filename" | "both";
@@ -16,12 +16,18 @@ function iconForDoc(type: string, fileName: string): string {
   return "book";
 }
 
+// "Declared Repos" (repos:) isn't a doc type from getDocTypeDefinitions(), so its category label needs a
+// constant of its own -- must match the categoryLabel crawler.ts uses for repo-manifest Problems.
+const REPO_MANIFEST_TYPE = "repo-manifest";
+const REPO_MANIFEST_LABEL = "Declared Repos";
+
 type TreeItemData =
   | { kind: "loading" }
   | { kind: "folder"; folderName: string }
   | { kind: "config"; folderName: string; exists: boolean }
   | { kind: "category"; folderName: string; type: string; label: string }
   | { kind: "doc"; node: DocNode }
+  | { kind: "repo"; repo: DeclaredRepo }
   | { kind: "missing"; problem: Problem };
 
 export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
@@ -30,6 +36,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
 
   private nodes: DocNode[] = [];
   private missing: Problem[] = [];
+  private repos: DeclaredRepo[] = [];
   private brokenLinkCounts = new Map<string, number>();
   private problemsByFolder = new Map<string, { missing: number; brokenLinks: number }>();
   private problemsByCategory = new Map<string, { missing: number; brokenLinks: number }>();
@@ -37,10 +44,11 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
   private loading = true;
   private configExists = new Map<string, boolean>();
 
-  update(nodes: DocNode[], problems: Problem[], categoryOrder: Map<string, string[]>): void {
+  update(nodes: DocNode[], problems: Problem[], categoryOrder: Map<string, string[]>, repos: DeclaredRepo[] = []): void {
     this.loading = false;
     this.nodes = nodes;
     this.categoryOrder = categoryOrder;
+    this.repos = repos;
     this.missing = problems.filter((p) => p.kind === "missing");
     this.brokenLinkCounts = new Map();
     for (const problem of problems) {
@@ -182,6 +190,14 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
       return item;
     }
 
+    if (element.kind === "repo") {
+      const item = new vscode.TreeItem(element.repo.name, vscode.TreeItemCollapsibleState.None);
+      item.description = element.repo.path;
+      item.tooltip = `${element.repo.remote}\n${element.repo.path}`;
+      item.iconPath = new vscode.ThemeIcon("repo");
+      return item;
+    }
+
     return this.getDocTreeItem(element.node);
   }
 
@@ -222,6 +238,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
       const folderNames = new Set<string>([
         ...this.nodes.map((n) => n.workspaceFolderName),
         ...this.missing.map((p) => p.workspaceFolderName).filter((n): n is string => !!n),
+        ...this.repos.map((r) => r.workspaceFolderName),
       ]);
       return [...folderNames].sort().map((folderName) => ({ kind: "folder", folderName }));
     }
@@ -229,6 +246,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
     if (element.kind === "folder") {
       const nodesInFolder = this.nodes.filter((n) => n.workspaceFolderName === element.folderName);
       const missingInFolder = this.missing.filter((p) => p.workspaceFolderName === element.folderName);
+      const reposInFolder = this.repos.filter((r) => r.workspaceFolderName === element.folderName);
 
       // preserve the built-in doc-type order, then append any custom types a repo's .specmesh.yml added
       const categoryLabels = new Map<string, string>();
@@ -245,10 +263,14 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
           categoryLabels.set(problem.docType, problem.categoryLabel ?? problem.docType);
         }
       }
+      if (reposInFolder.length > 0 && !categoryLabels.has(REPO_MANIFEST_TYPE)) {
+        categoryLabels.set(REPO_MANIFEST_TYPE, REPO_MANIFEST_LABEL);
+      }
 
       const presentTypes = new Set([
         ...nodesInFolder.map((n) => n.type),
         ...missingInFolder.map((p) => p.docType).filter((t): t is string => !!t),
+        ...(reposInFolder.length > 0 ? [REPO_MANIFEST_TYPE] : []),
       ]);
 
       const configItem: TreeItemData = {
@@ -267,6 +289,17 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
     }
 
     if (element.kind === "category") {
+      if (element.type === REPO_MANIFEST_TYPE) {
+        const missing: TreeItemData[] = this.missing
+          .filter((p) => p.workspaceFolderName === element.folderName && p.docType === REPO_MANIFEST_TYPE)
+          .map((problem) => ({ kind: "missing", problem }));
+        const present: TreeItemData[] = this.repos
+          .filter((r) => r.workspaceFolderName === element.folderName && r.present)
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((repo) => ({ kind: "repo", repo }));
+        return [...missing, ...present];
+      }
+
       const docs: TreeItemData[] = this.nodes
         .filter((n) => n.workspaceFolderName === element.folderName && n.type === element.type)
         .sort((a, b) => a.title.localeCompare(b.title))

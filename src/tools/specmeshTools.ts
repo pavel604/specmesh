@@ -102,6 +102,25 @@ class FindMissingDocsTool implements vscode.LanguageModelTool<FolderFilterInput>
   }
 }
 
+class ListReposTool implements vscode.LanguageModelTool<FolderFilterInput> {
+  async invoke(
+    options: vscode.LanguageModelToolInvocationOptions<FolderFilterInput>
+  ): Promise<vscode.LanguageModelToolResult> {
+    const { folder } = options.input;
+    const { repos } = await crawlWorkspace();
+    const filtered = repos.filter((r) => !folder || r.workspaceFolderName === folder);
+    if (filtered.length === 0) {
+      return textResult(
+        folder ? `No repos declared in ${folder}'s .specmesh.yml.` : "No repos declared in any workspace folder's .specmesh.yml."
+      );
+    }
+    const lines = filtered.map(
+      (r) => `- [${r.workspaceFolderName}] ${r.name} -- ${r.path} (${r.present ? "present" : "NOT PRESENT"}) <- ${r.remote}`
+    );
+    return textResult(`${filtered.length} declared repo(s):\n${lines.join("\n")}`);
+  }
+}
+
 interface GetDocLinksInput {
   path: string;
 }
@@ -221,6 +240,7 @@ export function registerSpecmeshTools(
     vscode.lm.registerTool("specmesh_find_orphans", new FindOrphansTool()),
     vscode.lm.registerTool("specmesh_find_missing_docs", new FindMissingDocsTool()),
     vscode.lm.registerTool("specmesh_get_doc_links", new GetDocLinksTool()),
+    vscode.lm.registerTool("specmesh_list_repos", new ListReposTool()),
     vscode.lm.registerTool("specmesh_update_track_entry", new UpdateTrackEntryTool(refresh)),
     vscode.lm.registerTool("specmesh_get_help", new GetHelpTool(context.extensionUri)),
   ];

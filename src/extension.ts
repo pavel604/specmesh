@@ -7,6 +7,23 @@ import { scaffoldSdlc } from "./scaffold/scaffold";
 import { openOrCreateConfig, addNewDoc } from "./scaffold/newDoc";
 import { registerSpecmeshTools } from "./tools/specmeshTools";
 import { DocNode } from "./model/types";
+import { enableCentralTracking, findSpecGitRoot, showCentralHistory } from "./git/specRepo";
+import { migrateRepoToCentral, pickRepoTarget, untrackRepoFromCentral } from "./git/repoMigration";
+import {
+  commitCentral,
+  ensureCentralScmProvider,
+  fetchCentral,
+  manageCentralRemotes,
+  pullCentral,
+  pushCentral,
+  refreshCentralScm,
+  stageAllCentralChanges,
+  stageCentralChange,
+  switchCentralBranch,
+  uncommitCentral,
+  unstageAllCentralChanges,
+  unstageCentralChange,
+} from "./git/centralScm";
 
 async function fileExists(uri: vscode.Uri): Promise<boolean> {
   try {
@@ -46,9 +63,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const refresh = async (): Promise<void> => {
     treeView.message = "specmesh: indexing docs\u2026";
-    const { nodes, missingProblems, categoryOrder } = await crawlWorkspace();
+    const { nodes, missingProblems, categoryOrder, repos } = await crawlWorkspace();
     const problems = [...computeProblems(nodes), ...missingProblems];
-    treeProvider.update(nodes, problems, categoryOrder);
+    treeProvider.update(nodes, problems, categoryOrder, repos);
     applyDiagnostics(diagnostics, problems);
 
     const configExists = new Map<string, boolean>();
@@ -65,6 +82,8 @@ export function activate(context: vscode.ExtensionContext): void {
     outputChannel.appendLine(
       `specmesh: indexed ${nodes.length} docs, ${brokenLinks} broken link(s), ${orphans} orphan(s), ${missing} missing tracked file(s).`
     );
+
+    await refreshCentralScm(nodes);
   };
 
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
@@ -76,9 +95,10 @@ export function activate(context: vscode.ExtensionContext): void {
   };
 
   const watcher = vscode.workspace.createFileSystemWatcher("**/*.md");
-  watcher.onDidChange(scheduleRefresh);
-  watcher.onDidCreate(scheduleRefresh);
-  watcher.onDidDelete(scheduleRefresh);
+  ensureCentralScmProvider(findSpecGitRoot(), context, outputChannel);
+  watcher.onDidChange(() => scheduleRefresh());
+  watcher.onDidCreate(() => scheduleRefresh());
+  watcher.onDidDelete(() => scheduleRefresh());
 
   const configWatcher = vscode.workspace.createFileSystemWatcher("**/.specmesh.yml");
   configWatcher.onDidChange(scheduleRefresh);
@@ -140,6 +160,61 @@ export function activate(context: vscode.ExtensionContext): void {
       }
       await vscode.workspace.fs.delete(vscode.Uri.file(node.absolutePath), { useTrash: true });
       await refresh();
+    }),
+    vscode.commands.registerCommand("specmesh.enableCentralTracking", async () => {
+      const root = await enableCentralTracking(outputChannel);
+      ensureCentralScmProvider(root, context, outputChannel);
+    }),
+    vscode.commands.registerCommand("specmesh.refreshCentralScm", async () => {
+      await refreshCentralScm((await crawlWorkspace()).nodes);
+    }),
+    vscode.commands.registerCommand("specmesh.stageCentralChange", async (item: { resourceUri: vscode.Uri }) => {
+      await stageCentralChange(item.resourceUri);
+    }),
+    vscode.commands.registerCommand("specmesh.unstageCentralChange", async (item: { resourceUri: vscode.Uri }) => {
+      await unstageCentralChange(item.resourceUri);
+    }),
+    vscode.commands.registerCommand("specmesh.stageAllCentralChanges", async () => {
+      await stageAllCentralChanges();
+    }),
+    vscode.commands.registerCommand("specmesh.unstageAllCentralChanges", async () => {
+      await unstageAllCentralChanges();
+    }),
+    vscode.commands.registerCommand("specmesh.commitCentral", async () => {
+      await commitCentral();
+    }),
+    vscode.commands.registerCommand("specmesh.uncommitCentral", async () => {
+      await uncommitCentral();
+    }),
+    vscode.commands.registerCommand("specmesh.switchCentralBranch", async () => {
+      await switchCentralBranch(outputChannel);
+    }),
+    vscode.commands.registerCommand("specmesh.manageCentralRemotes", async () => {
+      await manageCentralRemotes(outputChannel);
+    }),
+    vscode.commands.registerCommand("specmesh.pushCentral", async () => {
+      await pushCentral(outputChannel);
+    }),
+    vscode.commands.registerCommand("specmesh.pullCentral", async () => {
+      await pullCentral(outputChannel);
+    }),
+    vscode.commands.registerCommand("specmesh.fetchCentral", async () => {
+      await fetchCentral(outputChannel);
+    }),
+    vscode.commands.registerCommand("specmesh.migrateRepoDocs", async () => {
+      const target = await pickRepoTarget();
+      if (target) {
+        await migrateRepoToCentral(target.absolutePath, outputChannel);
+      }
+    }),
+    vscode.commands.registerCommand("specmesh.untrackRepoDocs", async () => {
+      const target = await pickRepoTarget();
+      if (target) {
+        await untrackRepoFromCentral(target.absolutePath, context, outputChannel);
+      }
+    }),
+    vscode.commands.registerCommand("specmesh.showCentralHistory", async () => {
+      await showCentralHistory(outputChannel);
     }),
     ...registerSpecmeshTools(context, refresh)
   );
