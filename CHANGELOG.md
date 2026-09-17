@@ -2,6 +2,11 @@
 
 All notable changes to the "specmesh" extension are documented in this file.
 
+## [0.11.0] - 2026-09-17
+
+- Docs Explorer now nests FR plan/tasks/walkthrough docs under their matching spec doc (same FR folder + version)
+  instead of separate flat top-level categories, via a new `DocTypeDefinition.children` config option.
+
 ## [0.10.0] - 2026-09-17
 
 - Added a central spec/doc git repo that spans multiple repos and projects a documentation layer onto them:
