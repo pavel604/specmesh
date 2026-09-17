@@ -41,13 +41,21 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
   private problemsByFolder = new Map<string, { missing: number; brokenLinks: number }>();
   private problemsByCategory = new Map<string, { missing: number; brokenLinks: number }>();
   private categoryOrder = new Map<string, string[]>();
+  private childTypeOrder = new Map<string, string[]>();
   private loading = true;
   private configExists = new Map<string, boolean>();
 
-  update(nodes: DocNode[], problems: Problem[], categoryOrder: Map<string, string[]>, repos: DeclaredRepo[] = []): void {
+  update(
+    nodes: DocNode[],
+    problems: Problem[],
+    categoryOrder: Map<string, string[]>,
+    childTypeOrder: Map<string, string[]> = new Map(),
+    repos: DeclaredRepo[] = []
+  ): void {
     this.loading = false;
     this.nodes = nodes;
     this.categoryOrder = categoryOrder;
+    this.childTypeOrder = childTypeOrder;
     this.repos = repos;
     this.missing = problems.filter((p) => p.kind === "missing");
     this.brokenLinkCounts = new Map();
@@ -99,6 +107,20 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
   private categoryIndex(folderName: string, type: string): number {
     const index = this.categoryOrder.get(folderName)?.indexOf(type) ?? -1;
     return index === -1 ? Number.MAX_SAFE_INTEGER : index;
+  }
+
+  /** A doc's nested children, in the parent type's declared `children` order (falls back to type then
+   * title when a child's type isn't in that order, which shouldn't normally happen). */
+  private childrenOf(node: DocNode): DocNode[] {
+    const kids = this.nodes.filter((n) => n.parentId === node.id);
+    const order = this.childTypeOrder.get(`${node.workspaceFolderName}::${node.type}`) ?? [];
+    const orderIndex = (type: string): number => {
+      const index = order.indexOf(type);
+      return index === -1 ? Number.MAX_SAFE_INTEGER : index;
+    };
+    return kids.sort(
+      (a, b) => orderIndex(a.type) - orderIndex(b.type) || a.type.localeCompare(b.type) || a.title.localeCompare(b.title)
+    );
   }
 
   /** Missing tracked files (error/red) take precedence over broken links (warning/amber) when a folder or
@@ -209,7 +231,11 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
     const secondary = format === "title" ? undefined : format === "filename" ? node.title : fileName;
     const description = [secondary, node.metadata["Status"]].filter(Boolean).join(" · ");
 
-    const item = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.None);
+    const hasChildren = this.nodes.some((n) => n.parentId === node.id);
+    const item = new vscode.TreeItem(
+      label,
+      hasChildren ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None
+    );
     item.description = description;
     item.tooltip = node.relativePath;
     item.contextValue = "doc";
@@ -268,7 +294,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
       }
 
       const presentTypes = new Set([
-        ...nodesInFolder.map((n) => n.type),
+        ...nodesInFolder.filter((n) => !n.parentId).map((n) => n.type),
         ...missingInFolder.map((p) => p.docType).filter((t): t is string => !!t),
         ...(reposInFolder.length > 0 ? [REPO_MANIFEST_TYPE] : []),
       ]);
@@ -301,13 +327,17 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
       }
 
       const docs: TreeItemData[] = this.nodes
-        .filter((n) => n.workspaceFolderName === element.folderName && n.type === element.type)
+        .filter((n) => n.workspaceFolderName === element.folderName && n.type === element.type && !n.parentId)
         .sort((a, b) => a.title.localeCompare(b.title))
         .map((node) => ({ kind: "doc", node }));
       const missing: TreeItemData[] = this.missing
         .filter((p) => p.workspaceFolderName === element.folderName && p.docType === element.type)
         .map((problem) => ({ kind: "missing", problem }));
       return [...missing, ...docs];
+    }
+
+    if (element.kind === "doc") {
+      return this.childrenOf(element.node).map((node) => ({ kind: "doc", node }));
     }
 
     return [];

@@ -18,6 +18,7 @@ from the tree, without hand-crafting file paths or leaving VS Code's Explorer vi
 | [FR-004](../FR-004-docs-explorer-actions-menu/spec.v1.md) | Docs Explorer Actions Menu | Done |
 | [FR-005](../FR-005-docs-tree-problem-indicator/spec.v1.md) | Docs Tree Problem Indicator | Done |
 | [FR-006](../FR-006-docs-tree-category-order/spec.v1.md) | Docs Tree Category Order | Done |
+| [FR-013](../FR-013-docs-tree-nesting/spec.v1.md) | Docs Tree Nesting | Done |
 
 ## Dependencies
 
@@ -26,3 +27,4 @@ from the tree, without hand-crafting file paths or leaving VS Code's Explorer vi
 ## Changelog
 
 - 2026-09-11: Epic created.
+- FR-013 added nested rendering (FR plan/tasks/walkthrough docs nest under their matching spec doc).

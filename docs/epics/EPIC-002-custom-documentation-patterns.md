@@ -16,6 +16,7 @@ convention, without forking the extension.
 | --- | --- | --- |
 | [FR-003](../FR-003-doc-type-root-metadata/spec.v1.md) | Replace ORPHAN_CHECK_TYPES with root/versioned metadata | Done |
 | [FR-007](../FR-007-doc-pattern-packs/spec.v1.md) | Documentation Pattern Packs | Done (descoped to internal refactor — see spec's Revision Note) |
+| [FR-013](../FR-013-docs-tree-nesting/spec.v1.md) | Docs Tree Nesting | Done |
 
 ## Dependencies
 
@@ -29,4 +30,6 @@ convention, without forking the extension.
 - FR-007 shipped only its internal `PatternPack` refactor of `scaffold.ts`; the user-facing custom-pack
   picker/discovery/authoring command were implemented then reverted as needing more design. Revisiting custom
   pattern packs as a user-facing feature is left for a future FR.
+- FR-013 added `DocTypeDefinition.children` for nested doc-type definitions, letting a repo's `.specmesh.yml`
+  express parent/child doc relationships (e.g. FR plan/tasks/walkthrough nesting under their spec).
 

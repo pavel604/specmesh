@@ -108,7 +108,19 @@ track: # replaces the doc types for THIS repo only (a whitelist, not a blacklist
     glob: ".github/**/*.md"      # broad catch-all
     exclude:                     # optional: glob(s) to exclude from this entry's matches
       - ".github/skills/*/templates/**"
+  - type: fr-spec
+    label: FR Specs
+    glob: "docs/FR-*/spec.v*.md"
+    children:                    # optional: nest matched instances of these types in the tree
+      - type: fr-plan
+        label: FR Plans
+        glob: "docs/FR-*/plan.v*.md"
 ```
+
+`children` nests a matched instance of that type under the specific parent instance sharing its directory
+and version number (e.g. `plan.v2.md` nests under `spec.v2.md` in the same `docs/FR-*/` folder) instead of
+listing it under its own top-level category. An instance with no version-matching parent (or no `children`
+declared at all) still renders under its own top-level category, exactly like today.
 
 `track` is a whitelist: list exactly the doc types/globs this repo has, in the shape it actually uses
 them. Repos without a `.specmesh.yml` fall back to the global `specmesh.docTypes` default. This is

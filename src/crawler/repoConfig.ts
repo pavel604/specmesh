@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { parse as parseYaml } from "yaml";
 import { DocTypeDefinition, RepoManifestEntry } from "../model/types";
+import { findDuplicateTypes } from "./docTypeTree";
 
 const CONFIG_FILENAME = ".specmesh.yml";
 const GLOB_SPECIAL_CHARS = /[*?[\]{}]/;
@@ -13,6 +14,23 @@ export interface RepoConfig {
   repos?: RepoManifestEntry[];
   /** human-readable reasons any `repos:` entries were dropped as invalid */
   repoErrors?: string[];
+  /** human-readable reasons any `track:` entries were dropped for reusing a `type` already declared
+   * elsewhere in the tree (top-level or nested) */
+  trackErrors?: string[];
+}
+
+/** Drops every occurrence of a `type` after its first (depth-first, top-level before children), dropping a
+ * duplicate's own nested `children` along with it. Exported for testing alongside `findDuplicateTypes`. */
+export function dropLaterDuplicates(defs: DocTypeDefinition[], seen: Set<string> = new Set()): DocTypeDefinition[] {
+  const kept: DocTypeDefinition[] = [];
+  for (const def of defs) {
+    if (seen.has(def.type)) {
+      continue;
+    }
+    seen.add(def.type);
+    kept.push(def.children ? { ...def, children: dropLaterDuplicates(def.children, seen) } : def);
+  }
+  return kept;
 }
 
 const EMPTY_CONFIG: RepoConfig = {};
@@ -58,10 +76,19 @@ export async function loadRepoConfig(folder: vscode.WorkspaceFolder): Promise<Re
 
   const parsed = (parseYaml(content) ?? {}) as Partial<RepoConfig>;
   const { repos, errors } = parseRepoManifest(parsed.repos);
+
+  const rawTrack = Array.isArray(parsed.track) && parsed.track.length > 0 ? parsed.track : undefined;
+  const duplicateTypes = rawTrack ? findDuplicateTypes(rawTrack) : [];
+  const track = duplicateTypes.length > 0 ? dropLaterDuplicates(rawTrack!) : rawTrack;
+  const trackErrors = duplicateTypes.map(
+    (type) => `track: duplicate "type: ${type}" entry -- keeping the first occurrence, dropping the rest.`
+  );
+
   return {
-    track: Array.isArray(parsed.track) && parsed.track.length > 0 ? parsed.track : undefined,
+    track,
     repos: repos.length > 0 ? repos : undefined,
     repoErrors: errors.length > 0 ? errors : undefined,
+    trackErrors: trackErrors.length > 0 ? trackErrors : undefined,
   };
 }
 

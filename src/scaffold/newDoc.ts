@@ -3,6 +3,7 @@ import { buildSpecmeshYml } from "./scaffold";
 import { BUILTIN_PACK_DATA } from "./patterns";
 import { loadRepoConfig } from "../crawler/repoConfig";
 import { getDocTypeDefinitions } from "../crawler/docTypes";
+import { flattenDocTypes } from "../crawler/docTypeTree";
 
 // FR/charter/SDD stay out of the "Add new..." picker: FR spec/plan/tasks/walkthrough is a multi-file flow
 // owned by /new-feature, charter.md is created only by the scaffold command, and the SDD doc is a
@@ -80,7 +81,7 @@ export async function addNewDoc(folderName: string): Promise<void> {
   }
 
   const repoConfig = await loadRepoConfig(folder);
-  const defs = (repoConfig.track ?? getDocTypeDefinitions()).filter((d) => !NON_ADDABLE_TYPES.has(d.type));
+  const defs = flattenDocTypes(repoConfig.track ?? getDocTypeDefinitions()).filter((d) => !NON_ADDABLE_TYPES.has(d.type));
   if (defs.length === 0) {
     vscode.window.showWarningMessage(`specmesh: ${folderName} has no addable doc types tracked.`);
     return;

@@ -10,6 +10,9 @@ export interface DocTypeDefinition {
   /** when true, docs of this type are never flagged as orphans (e.g. charter/epic/instructions/skill docs
    * that are legitimate roots, not expected to be linked from elsewhere). Defaults to false/checked. */
   root?: boolean;
+  /** nested doc type definitions rendered under a matched instance of this type in the tree, e.g. fr-spec's
+   * children being fr-plan/fr-tasks/fr-walkthrough. A type may only be nested under one parent. */
+  children?: DocTypeDefinition[];
 }
 
 export interface DocLink {
@@ -37,6 +40,9 @@ export interface DocNode {
   links: DocLink[];
   /** copied from the originating DocTypeDefinition.root at crawl time. */
   root?: boolean;
+  /** id of the matched parent DocNode (same directory + version token, per the parent type's `children`
+   * declaration), when this doc nests under one in the tree. Undefined if unmatched or not a child type. */
+  parentId?: string;
 }
 
 export interface Problem {

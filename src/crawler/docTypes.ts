@@ -10,10 +10,16 @@ import { DocTypeDefinition } from "../model/types";
 const DEFAULT_DOC_TYPES: DocTypeDefinition[] = [
   { type: "adr", label: "ADRs", glob: "docs/adr/ADR-*.md" },
   { type: "reference", label: "Reference", glob: "docs/reference/*.md" },
-  { type: "fr-spec", label: "FR Specs", glob: "docs/FR-*/spec.v*.md" },
-  { type: "fr-plan", label: "FR Plans", glob: "docs/FR-*/plan.v*.md", root: true },
-  { type: "fr-tasks", label: "FR Tasks", glob: "docs/FR-*/tasks.v*.md", root: true },
-  { type: "fr-walkthrough", label: "FR Walkthroughs", glob: "docs/FR-*/walkthrough.v*.md", root: true },
+  {
+    type: "fr-spec",
+    label: "FR Specs",
+    glob: "docs/FR-*/spec.v*.md",
+    children: [
+      { type: "fr-plan", label: "FR Plans", glob: "docs/FR-*/plan.v*.md", root: true },
+      { type: "fr-tasks", label: "FR Tasks", glob: "docs/FR-*/tasks.v*.md", root: true },
+      { type: "fr-walkthrough", label: "FR Walkthroughs", glob: "docs/FR-*/walkthrough.v*.md", root: true },
+    ],
+  },
   { type: "instructions", label: "Instructions", glob: ".github/instructions/*.instructions.md", root: true },
   { type: "skill", label: "Skills", glob: ".github/skills/*/SKILL.md", root: true },
 ];
@@ -28,5 +34,9 @@ export function getDocTypeDefinitions(): DocTypeDefinition[] {
 /** A fresh copy of specmesh's intrinsic defaults, independent of any user/workspace `specmesh.docTypes`
  * override -- used when generating a repo's own `.specmesh.yml` so it's a portable, self-contained file. */
 export function getBuiltinDefaultDocTypes(): DocTypeDefinition[] {
-  return DEFAULT_DOC_TYPES.map((d) => ({ ...d }));
+  return cloneDocTypes(DEFAULT_DOC_TYPES);
+}
+
+function cloneDocTypes(defs: DocTypeDefinition[]): DocTypeDefinition[] {
+  return defs.map((d) => (d.children ? { ...d, children: cloneDocTypes(d.children) } : { ...d }));
 }

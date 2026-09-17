@@ -63,9 +63,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const refresh = async (): Promise<void> => {
     treeView.message = "specmesh: indexing docs\u2026";
-    const { nodes, missingProblems, categoryOrder, repos } = await crawlWorkspace();
+    const { nodes, missingProblems, categoryOrder, childTypeOrder, repos } = await crawlWorkspace();
     const problems = [...computeProblems(nodes), ...missingProblems];
-    treeProvider.update(nodes, problems, categoryOrder, repos);
+    treeProvider.update(nodes, problems, categoryOrder, childTypeOrder, repos);
     applyDiagnostics(diagnostics, problems);
 
     const configExists = new Map<string, boolean>();

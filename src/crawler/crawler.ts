@@ -5,6 +5,7 @@ import { parseFrontMatter } from "./frontMatter";
 import { extractMarkdownLinks } from "./linkExtractor";
 import { getDocTypeDefinitions } from "./docTypes";
 import { isLiteralGlob, loadRepoConfig } from "./repoConfig";
+import { attachParentIds, buildChildTypeOrder, flattenDocTypes } from "./docTypeTree";
 import { DeclaredRepo, DocLink, DocNode, Problem } from "../model/types";
 
 function resolveLinkTarget(fromFile: string, target: string): string | null {
@@ -38,6 +39,9 @@ export interface CrawlResult {
   /** each folder's effective doc-type order (its own .specmesh.yml `track:` order, or the global default),
    * so the tree can render category rows in that same order instead of a hardcoded one. */
   categoryOrder: Map<string, string[]>;
+  /** each folder's declared nested-child order, keyed `` `${folderName}::${parentType}` `` -- so the tree
+   * can render a parent doc's nested children in their declared order instead of alphabetically. */
+  childTypeOrder: Map<string, string[]>;
   /** child repos declared via .specmesh.yml `repos:`, across all workspace folders */
   repos: DeclaredRepo[];
 }
@@ -48,6 +52,7 @@ export async function crawlWorkspace(): Promise<CrawlResult> {
   const nodes: DocNode[] = [];
   const missingProblems: Problem[] = [];
   const categoryOrder = new Map<string, string[]>();
+  const childTypeOrder = new Map<string, string[]>();
   const seenPaths = new Set<string>();
   const repos: DeclaredRepo[] = [];
 
@@ -55,6 +60,9 @@ export async function crawlWorkspace(): Promise<CrawlResult> {
     const repoConfig = await loadRepoConfig(folder);
     const defs = repoConfig.track ?? globalDefs;
     categoryOrder.set(folder.name, defs.map((d) => d.type));
+    for (const [parentType, childTypes] of buildChildTypeOrder(defs)) {
+      childTypeOrder.set(`${folder.name}::${parentType}`, childTypes);
+    }
 
     for (const message of repoConfig.repoErrors ?? []) {
       missingProblems.push({
@@ -65,6 +73,18 @@ export async function crawlWorkspace(): Promise<CrawlResult> {
         workspaceFolderName: folder.name,
         docType: "repo-manifest",
         categoryLabel: "Declared Repos",
+      });
+    }
+
+    for (const message of repoConfig.trackErrors ?? []) {
+      missingProblems.push({
+        kind: "missing",
+        docId: `${folder.name}::track-error:${message}`,
+        absolutePath: path.join(folder.uri.fsPath, ".specmesh.yml"),
+        message,
+        workspaceFolderName: folder.name,
+        docType: "config-error",
+        categoryLabel: "Config Issues",
       });
     }
 
@@ -87,7 +107,9 @@ export async function crawlWorkspace(): Promise<CrawlResult> {
       }
     }
 
-    for (const def of defs) {
+    const folderNodes: DocNode[] = [];
+
+    for (const def of flattenDocTypes(defs)) {
       const pattern = new vscode.RelativePattern(folder, def.glob);
       const mergedExclude = withSpecmeshExclude(def.exclude);
       const excludePattern = new vscode.RelativePattern(
@@ -135,7 +157,7 @@ export async function crawlWorkspace(): Promise<CrawlResult> {
         });
 
         const relativePath = path.relative(folder.uri.fsPath, uri.fsPath).replace(/\\/g, "/");
-        nodes.push({
+        folderNodes.push({
           id: `${folder.name}::${relativePath}`,
           type: def.type,
           categoryLabel: def.label,
@@ -150,8 +172,10 @@ export async function crawlWorkspace(): Promise<CrawlResult> {
         });
       }
     }
+
+    nodes.push(...attachParentIds(folderNodes, defs));
   }
 
-  return { nodes, missingProblems, categoryOrder, repos };
+  return { nodes, missingProblems, categoryOrder, childTypeOrder, repos };
 }
 

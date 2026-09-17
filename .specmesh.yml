@@ -12,6 +12,19 @@ track:
   - type: fr-spec
     label: FR Specs
     glob: docs/FR-*/spec.v*.md
+    children:
+      - type: fr-plan
+        label: FR Plans
+        glob: docs/FR-*/plan.v*.md
+        root: true
+      - type: fr-tasks
+        label: FR Tasks
+        glob: docs/FR-*/tasks.v*.md
+        root: true
+      - type: fr-walkthrough
+        label: FR Walkthroughs
+        glob: docs/FR-*/walkthrough.v*.md
+        root: true
   - type: adr
     label: ADRs
     glob: docs/adr/ADR-*.md
@@ -19,18 +32,6 @@ track:
   - type: reference
     label: Reference
     glob: docs/reference/*.md
-  - type: fr-plan
-    label: FR Plans
-    glob: docs/FR-*/plan.v*.md
-    root: true
-  - type: fr-tasks
-    label: FR Tasks
-    glob: docs/FR-*/tasks.v*.md
-    root: true
-  - type: fr-walkthrough
-    label: FR Walkthroughs
-    glob: docs/FR-*/walkthrough.v*.md
-    root: true
   - type: instructions
     label: Instructions
     glob: .github/instructions/*.instructions.md
