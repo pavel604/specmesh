@@ -247,11 +247,11 @@
       },
       {
         "command": "specmesh.showCentralHistory",
-        "title": "specmesh: Show Central Doc History"
+        "title": "Show Central Doc History"
       },
       {
         "command": "specmesh.refreshCentralScm",
-        "title": "specmesh: Refresh Central Doc Status",
+        "title": "Refresh Central Doc Status",
         "icon": "$(refresh)"
       },
       {
@@ -281,12 +281,28 @@
       },
       {
         "command": "specmesh.uncommitCentral",
-        "title": "specmesh: Undo Last Commit"
+        "title": "Undo Last Commit"
       },
       {
         "command": "specmesh.switchCentralBranch",
-        "title": "specmesh: Switch Central Branch\u2026",
+        "title": "Switch Central Branch\u2026",
         "icon": "$(git-branch)"
+      },
+      {
+        "command": "specmesh.manageCentralRemotes",
+        "title": "Manage Remotes\u2026"
+      },
+      {
+        "command": "specmesh.pushCentral",
+        "title": "Push"
+      },
+      {
+        "command": "specmesh.pullCentral",
+        "title": "Pull"
+      },
+      {
+        "command": "specmesh.fetchCentral",
+        "title": "Fetch"
       }
     ],
     "submenus": [
@@ -383,6 +399,22 @@
         {
           "command": "specmesh.uncommitCentral",
           "group": "2_specmesh"
+        },
+        {
+          "command": "specmesh.manageCentralRemotes",
+          "group": "3_specmesh"
+        },
+        {
+          "command": "specmesh.pushCentral",
+          "group": "3_specmesh"
+        },
+        {
+          "command": "specmesh.pullCentral",
+          "group": "3_specmesh"
+        },
+        {
+          "command": "specmesh.fetchCentral",
+          "group": "3_specmesh"
         }
       ],
       "scm/resourceGroup/context": [

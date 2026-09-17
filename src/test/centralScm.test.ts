@@ -5,6 +5,8 @@ import {
   parseCheckoutConflictFiles,
   parseLsFilesStage,
   parseLsTree,
+  parseRemoteList,
+  parseUpstream,
 } from "../git/centralScm";
 
 suite("parseLsTree", () => {
@@ -122,6 +124,48 @@ suite("parseCheckoutConflictFiles", () => {
 
   test("returns an empty list for an unrelated error", () => {
     assert.deepEqual(parseCheckoutConflictFiles("fatal: not a git repository"), []);
+  });
+});
+
+suite("parseRemoteList", () => {
+  test("dedupes a remote's fetch/push line pair, keeping the fetch URL", () => {
+    const output = [
+      "origin\tgit@github.com:me/repo.git (fetch)",
+      "origin\tgit@github.com:me/repo.git (push)",
+    ].join("\n");
+    assert.deepEqual(parseRemoteList(output), [{ name: "origin", url: "git@github.com:me/repo.git" }]);
+  });
+
+  test("parses multiple distinct remotes", () => {
+    const output = [
+      "origin\tgit@github.com:me/repo.git (fetch)",
+      "origin\tgit@github.com:me/repo.git (push)",
+      "backup\thttps://example.com/repo.git (fetch)",
+      "backup\thttps://example.com/repo.git (push)",
+    ].join("\n");
+    assert.deepEqual(parseRemoteList(output), [
+      { name: "origin", url: "git@github.com:me/repo.git" },
+      { name: "backup", url: "https://example.com/repo.git" },
+    ]);
+  });
+
+  test("returns an empty list for blank output", () => {
+    assert.deepEqual(parseRemoteList(""), []);
+  });
+});
+
+suite("parseUpstream", () => {
+  test("splits '<remote>/<branch>' into its parts", () => {
+    assert.deepEqual(parseUpstream("origin/main"), { remote: "origin", branch: "main" });
+  });
+
+  test("handles a branch name that itself contains a slash", () => {
+    assert.deepEqual(parseUpstream("origin/feature/x"), { remote: "origin", branch: "feature/x" });
+  });
+
+  test("returns undefined for blank output (no upstream configured)", () => {
+    assert.equal(parseUpstream(""), undefined);
+    assert.equal(parseUpstream("\n"), undefined);
   });
 });
 

@@ -12,6 +12,10 @@ import { migrateRepoToCentral, pickRepoTarget, untrackRepoFromCentral } from "./
 import {
   commitCentral,
   ensureCentralScmProvider,
+  fetchCentral,
+  manageCentralRemotes,
+  pullCentral,
+  pushCentral,
   refreshCentralScm,
   stageAllCentralChanges,
   stageCentralChange,
@@ -184,6 +188,18 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand("specmesh.switchCentralBranch", async () => {
       await switchCentralBranch(outputChannel);
+    }),
+    vscode.commands.registerCommand("specmesh.manageCentralRemotes", async () => {
+      await manageCentralRemotes(outputChannel);
+    }),
+    vscode.commands.registerCommand("specmesh.pushCentral", async () => {
+      await pushCentral(outputChannel);
+    }),
+    vscode.commands.registerCommand("specmesh.pullCentral", async () => {
+      await pullCentral(outputChannel);
+    }),
+    vscode.commands.registerCommand("specmesh.fetchCentral", async () => {
+      await fetchCentral(outputChannel);
     }),
     vscode.commands.registerCommand("specmesh.migrateRepoDocs", async () => {
       const target = await pickRepoTarget();

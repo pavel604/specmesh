@@ -88,6 +88,37 @@ export function parseBranchList(output: string): { name: string; current: boolea
     });
 }
 
+/** Parses `git remote -v` output (a `(fetch)`/`(push)` line per remote) into unique `{ name, url }` entries,
+ * keeping the `(fetch)` URL for each name. */
+export function parseRemoteList(output: string): { name: string; url: string }[] {
+  const byName = new Map<string, string>();
+  for (const line of output.split(/\r?\n/)) {
+    const match = line.match(/^(\S+)\s+(\S+)\s+\((fetch|push)\)$/);
+    if (!match) {
+      continue;
+    }
+    const [, name, url, kind] = match;
+    if (kind === "fetch" || !byName.has(name)) {
+      byName.set(name, url);
+    }
+  }
+  return [...byName.entries()].map(([name, url]) => ({ name, url }));
+}
+
+/** Parses the single-line output of `for-each-ref --format=%(upstream:short) refs/heads/<branch>` (e.g.
+ * `origin/main`) into `{ remote, branch }`. Returns `undefined` for empty output (no upstream configured). */
+export function parseUpstream(output: string): { remote: string; branch: string } | undefined {
+  const trimmed = output.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  const slashIndex = trimmed.indexOf("/");
+  if (slashIndex === -1) {
+    return undefined;
+  }
+  return { remote: trimmed.slice(0, slashIndex), branch: trimmed.slice(slashIndex + 1) };
+}
+
 /** Extracts the file paths git lists in its "local changes ... would be overwritten by checkout" error. */
 export function parseCheckoutConflictFiles(stderr: string): string[] {
   if (!/would be overwritten by checkout/i.test(stderr)) {
@@ -449,4 +480,280 @@ export async function switchCentralBranch(outputChannel: vscode.OutputChannel): 
       );
     }
   }
+}
+
+async function currentBranchName(gitDir: string): Promise<string | undefined> {
+  const output = await execGit(["--git-dir", gitDir, "branch", "--list"]);
+  return parseBranchList(output).find((b) => b.current)?.name;
+}
+
+async function upstreamFor(gitDir: string, branch: string): Promise<{ remote: string; branch: string } | undefined> {
+  const output = await execGit([
+    "--git-dir",
+    gitDir,
+    "for-each-ref",
+    "--format=%(upstream:short)",
+    `refs/heads/${branch}`,
+  ]);
+  return parseUpstream(output);
+}
+
+/** Prompts for a remote name (defaulting to `origin` if left blank and unused) and URL, then runs
+ * `remote add`. Returns the new remote's name, or `undefined` if the user cancelled. */
+async function addRemoteFlow(gitDir: string): Promise<string | undefined> {
+  const existing = parseRemoteList(await execGit(["--git-dir", gitDir, "remote", "-v"]));
+  const originTaken = existing.some((r) => r.name === "origin");
+
+  const nameInput = await vscode.window.showInputBox({
+    prompt: "specmesh: remote name",
+    placeHolder: originTaken ? undefined : "origin",
+  });
+  if (nameInput === undefined) {
+    return undefined;
+  }
+  const name = nameInput.trim() || (originTaken ? "" : "origin");
+  if (!name) {
+    vscode.window.showWarningMessage("specmesh: remote name is required.");
+    return undefined;
+  }
+
+  const url = await vscode.window.showInputBox({ prompt: `specmesh: URL for remote "${name}"` });
+  if (!url) {
+    return undefined;
+  }
+
+  await execGit(["--git-dir", gitDir, "remote", "add", name, url]);
+  vscode.window.showInformationMessage(`specmesh: added remote "${name}".`);
+  return name;
+}
+
+/** Resolves which remote push/pull/fetch should use when the current branch has no upstream configured yet:
+ * with no remotes, runs the add-remote flow inline; with exactly one, uses it directly; with several, asks. */
+async function pickOrAddRemote(gitDir: string): Promise<string | undefined> {
+  const remotes = parseRemoteList(await execGit(["--git-dir", gitDir, "remote", "-v"]));
+  if (remotes.length === 0) {
+    return addRemoteFlow(gitDir);
+  }
+  if (remotes.length === 1) {
+    return remotes[0].name;
+  }
+  const pick = await vscode.window.showQuickPick(
+    remotes.map((r) => ({ label: r.name, description: r.url })),
+    { placeHolder: "specmesh: which remote?" }
+  );
+  return pick?.label;
+}
+
+/** Opens a QuickPick of the central repo's remotes (plus "Add remote..."). Picking an existing remote offers
+ * "Edit URL..." / "Remove"; picking "Add remote..." runs the add flow. */
+export async function manageCentralRemotes(outputChannel: vscode.OutputChannel): Promise<void> {
+  if (!activeProvider) {
+    return;
+  }
+  const gitDir = gitDirFor(activeProvider.root);
+  const addLabel = "$(add) Add remote\u2026";
+
+  try {
+    const remotes = parseRemoteList(await execGit(["--git-dir", gitDir, "remote", "-v"]));
+    const pick = await vscode.window.showQuickPick(
+      [
+        ...remotes.map((r) => ({ label: `$(link) ${r.name}`, description: r.url, name: r.name, url: r.url })),
+        { label: addLabel, description: undefined as string | undefined, name: undefined as string | undefined, url: undefined as string | undefined },
+      ],
+      { placeHolder: "specmesh: manage remotes" }
+    );
+    if (!pick) {
+      return;
+    }
+    if (!pick.name) {
+      await addRemoteFlow(gitDir);
+      return;
+    }
+    const remoteName = pick.name;
+    const remoteUrl = pick.url;
+
+    const action = await vscode.window.showQuickPick(["Edit URL\u2026", "Remove"], {
+      placeHolder: `specmesh: remote "${remoteName}"`,
+    });
+    if (action === "Edit URL\u2026") {
+      const url = await vscode.window.showInputBox({
+        prompt: `specmesh: new URL for remote "${remoteName}"`,
+        value: remoteUrl,
+      });
+      if (!url) {
+        return;
+      }
+      await execGit(["--git-dir", gitDir, "remote", "set-url", remoteName, url]);
+      vscode.window.showInformationMessage(`specmesh: updated remote "${remoteName}".`);
+    } else if (action === "Remove") {
+      const confirm = await vscode.window.showWarningMessage(
+        `Remove remote "${remoteName}"? This can't be undone.`,
+        { modal: true },
+        "Remove"
+      );
+      if (confirm !== "Remove") {
+        return;
+      }
+      await execGit(["--git-dir", gitDir, "remote", "remove", remoteName]);
+      vscode.window.showInformationMessage(`specmesh: removed remote "${remoteName}".`);
+    }
+  } catch (err) {
+    const message = (err as Error).message;
+    outputChannel.appendLine(`specmesh: remote management failed: ${message}`);
+    vscode.window.showWarningMessage(`specmesh: ${message}`);
+  }
+}
+
+/** Renders the exact terminal-equivalent of a `--git-dir`/`--work-tree` git invocation, so a failed
+ * push/pull/fetch can offer it back to the user to run interactively (e.g. so an SSH agent can prompt for a
+ * passphrase, which git can't do from this extension's own non-interactive child process). */
+function syncCommandString(gitDir: string, workTree: string, args: string[]): string {
+  return `git --git-dir="${gitDir}" --work-tree="${workTree}" ${args.join(" ")}`;
+}
+
+/** Logs a push/pull/fetch failure to the output channel and shows a warning with a "Copy Terminal Command"
+ * button -- the same operation often fails silently here only because git has no TTY to prompt for a
+ * passphrase/2FA code, and running the equivalent command in a real terminal lets the user answer that prompt
+ * themselves. */
+async function reportSyncFailure(
+  outputChannel: vscode.OutputChannel,
+  verb: string,
+  message: string,
+  terminalCommand: string
+): Promise<void> {
+  outputChannel.appendLine(`specmesh: ${verb} failed: ${message}`);
+  const choice = await vscode.window.showWarningMessage(
+    `specmesh: ${verb} failed \u2014 ${message}`,
+    "Copy Terminal Command"
+  );
+  if (choice === "Copy Terminal Command") {
+    await vscode.env.clipboard.writeText(terminalCommand);
+  }
+}
+
+/** Pushes the current branch. Reuses the existing upstream if one is configured; otherwise resolves a remote
+ * (prompting/adding as needed) and sets it as the upstream via `push -u`. */
+export async function pushCentral(outputChannel: vscode.OutputChannel): Promise<void> {
+  if (!activeProvider) {
+    return;
+  }
+  const gitDir = gitDirFor(activeProvider.root);
+  const workTree = activeProvider.root.uri.fsPath;
+  const branch = await currentBranchName(gitDir);
+  if (!branch) {
+    vscode.window.showWarningMessage("specmesh: no branch checked out, can't push.");
+    return;
+  }
+
+  const upstream = await upstreamFor(gitDir, branch);
+  let remote: string;
+  let pushArgs: string[];
+  if (upstream) {
+    remote = upstream.remote;
+    pushArgs = ["push"];
+  } else {
+    const picked = await pickOrAddRemote(gitDir);
+    if (!picked) {
+      return;
+    }
+    remote = picked;
+    pushArgs = ["push", "-u", remote, branch];
+  }
+
+  try {
+    await execGit(["--git-dir", gitDir, "--work-tree", workTree, ...pushArgs]);
+    vscode.window.showInformationMessage(`specmesh: pushed ${branch} to ${remote}.`);
+  } catch (err) {
+    const message = (err as Error).message;
+    await reportSyncFailure(outputChannel, "push", message, syncCommandString(gitDir, workTree, pushArgs));
+  }
+}
+
+/** Pulls into the current branch. Reuses the existing upstream if one is configured; otherwise resolves a
+ * remote and branch to pull from and records that as the upstream once the pull succeeds. Always refreshes
+ * afterward (a pull can change working-tree files, like a checkout). */
+export async function pullCentral(outputChannel: vscode.OutputChannel): Promise<void> {
+  if (!activeProvider) {
+    return;
+  }
+  const gitDir = gitDirFor(activeProvider.root);
+  const workTree = activeProvider.root.uri.fsPath;
+  const branch = await currentBranchName(gitDir);
+  if (!branch) {
+    vscode.window.showWarningMessage("specmesh: no branch checked out, can't pull.");
+    return;
+  }
+
+  const upstream = await upstreamFor(gitDir, branch);
+  let remote: string;
+  let remoteBranch: string;
+  let pullArgs: string[];
+  if (upstream) {
+    remote = upstream.remote;
+    remoteBranch = upstream.branch;
+    pullArgs = ["pull"];
+  } else {
+    const picked = await pickOrAddRemote(gitDir);
+    if (!picked) {
+      return;
+    }
+    remote = picked;
+    const branchInput = await vscode.window.showInputBox({
+      prompt: `specmesh: branch on "${remote}" to pull from`,
+      value: branch,
+    });
+    if (!branchInput) {
+      return;
+    }
+    remoteBranch = branchInput;
+    pullArgs = ["pull", remote, remoteBranch];
+  }
+
+  try {
+    await execGit(["--git-dir", gitDir, "--work-tree", workTree, ...pullArgs]);
+  } catch (err) {
+    const message = (err as Error).message;
+    await reportSyncFailure(outputChannel, "pull", message, syncCommandString(gitDir, workTree, pullArgs));
+    await activeProvider.refresh((await crawlWorkspace()).nodes);
+    return;
+  }
+
+  if (!upstream) {
+    try {
+      await execGit(["--git-dir", gitDir, "branch", "--set-upstream-to", `${remote}/${remoteBranch}`, branch]);
+    } catch {
+      // Best-effort -- the pull itself already succeeded.
+    }
+  }
+  vscode.window.showInformationMessage(`specmesh: pulled ${branch} from ${remote}.`);
+  await activeProvider.refresh((await crawlWorkspace()).nodes);
+}
+
+/** Fetches from the current branch's upstream remote, or resolves one (prompting/adding as needed) if none is
+ * configured yet. Doesn't touch working-tree files, so a plain refresh (reusing the cached crawl) is enough. */
+export async function fetchCentral(outputChannel: vscode.OutputChannel): Promise<void> {
+  if (!activeProvider) {
+    return;
+  }
+  const gitDir = gitDirFor(activeProvider.root);
+  const workTree = activeProvider.root.uri.fsPath;
+  const branch = await currentBranchName(gitDir);
+  const upstream = branch ? await upstreamFor(gitDir, branch) : undefined;
+
+  let remote = upstream?.remote;
+  if (!remote) {
+    remote = await pickOrAddRemote(gitDir);
+    if (!remote) {
+      return;
+    }
+  }
+
+  try {
+    await execGit(["--git-dir", gitDir, "--work-tree", workTree, "fetch", remote]);
+    vscode.window.showInformationMessage(`specmesh: fetched from ${remote}.`);
+  } catch (err) {
+    const message = (err as Error).message;
+    await reportSyncFailure(outputChannel, "fetch", message, syncCommandString(gitDir, workTree, ["fetch", remote]));
+  }
+  await activeProvider.refresh();
 }

@@ -19,6 +19,7 @@ duplicating the file on disk or disturbing each child repo's own git history for
 | [FR-009](../FR-009-cross-repo-doc-tracking/spec.v1.md) | Cross-repo detached doc tracking (central git-plumbing history) | Done |
 | [FR-010](../FR-010-central-doc-history-scm-view/spec.v1.md) | Central doc history as a custom Source Control view | Done |
 | [FR-011](../FR-011-central-scm-branch-commit/spec.v1.md) | Branch, stage & commit in the central SCM view | Done |
+| [FR-012](../FR-012-central-scm-remote-sync/spec.v1.md) | Remote add/remove/edit, push, pull & fetch in the central SCM view | Done |
 
 ## Dependencies
 
@@ -49,3 +50,12 @@ duplicating the file on disk or disturbing each child repo's own git history for
   commit) before final sign-off, and fixed a bug found while testing it: staging silently skipped docs inside
   child repos (`git add`'s submodule-boundary check), fixed by staging via low-level `hash-object`/
   `update-index --index-info` plumbing instead.
+- 2026-09-17: Added FR-012 for remote add/remove/edit plus push/pull/fetch, so the central repo can sync to a
+  remote such as GitHub — explicitly out of scope for FR-011.
+- 2026-09-17: FR-012 done. "Manage Remotes…" (add/edit URL/remove) plus Push/Pull/Fetch actions in the "..."
+  submenu; upstream is auto-resolved when configured, otherwise the user is prompted for (or can add) a
+  remote. Also dropped the redundant `specmesh:` prefix from that submenu's command titles per user request.
+  Fixed a bug found during live GitHub testing: a passphrase-protected SSH key (no unlocked agent) fails with
+  `Permission denied (publickey)` since these git calls run in a non-interactive child process with no TTY for
+  a passphrase prompt — fixed with a "Copy Terminal Command" button on the failure warning so the user can run
+  the exact equivalent command interactively instead.
