@@ -2,6 +2,12 @@
 
 All notable changes to the "specmesh" extension are documented in this file.
 
+## [0.10.0] - 2026-09-17
+
+- Added a central spec/doc git repo that spans multiple repos and projects a documentation layer onto them:
+  stage, commit, undo last commit, switch/create branches, manage remotes (add/edit/remove), and push/pull/fetch
+  — all from a dedicated "specmesh (central)" Source Control view.
+
 ## [0.9.3] - 2026-09-16
 
 - Fixed a false broken-link flag for markdown links written inside inline code spans (backticks), e.g. template
