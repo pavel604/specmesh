@@ -172,6 +172,9 @@ export function activate(context: vscode.ExtensionContext): void {
       await openOrCreateConfig(folderName);
       await refresh();
     }),
+    vscode.commands.registerCommand("specmesh.expandCategory", (folderName: string, type: string) => {
+      treeProvider.expandCategory(folderName, type);
+    }),
     vscode.commands.registerCommand("specmesh.addNewDoc", async (item: { folderName: string }) => {
       await addNewDoc(item.folderName);
       await refresh();

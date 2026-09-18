@@ -224,6 +224,10 @@
         "title": "specmesh: Open or Create .specmesh.yml"
       },
       {
+        "command": "specmesh.expandCategory",
+        "title": "specmesh: Show More Docs"
+      },
+      {
         "command": "specmesh.addNewDoc",
         "title": "specmesh: Add New Doc…",
         "icon": "$(add)"

@@ -19,6 +19,7 @@ from the tree, without hand-crafting file paths or leaving VS Code's Explorer vi
 | [FR-005](../FR-005-docs-tree-problem-indicator/spec.v1.md) | Docs Tree Problem Indicator | Done |
 | [FR-006](../FR-006-docs-tree-category-order/spec.v1.md) | Docs Tree Category Order | Done |
 | [FR-013](../FR-013-docs-tree-nesting/spec.v1.md) | Docs Tree Nesting | Done |
+| [FR-015](../FR-015-docs-tree-category-pagination/spec.v1.md) | Docs Tree Category Recency Sort & Pagination | Done |
 
 ## Dependencies
 
@@ -28,3 +29,4 @@ from the tree, without hand-crafting file paths or leaving VS Code's Explorer vi
 
 - 2026-09-11: Epic created.
 - FR-013 added nested rendering (FR plan/tasks/walkthrough docs nest under their matching spec doc).
+- FR-015 added newest-first sorting and a 10-doc cap (with "Show N more…" expand) to category doc lists.

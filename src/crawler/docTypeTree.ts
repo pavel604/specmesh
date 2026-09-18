@@ -69,6 +69,44 @@ function versionToken(relativePath: string): string | undefined {
   return fileName.match(VERSION_TOKEN_RE)?.[1];
 }
 
+// the two front-matter keys this convention uses for a doc's creation date -- FR/epic docs use "Created",
+// ADRs use "Date". Checked in this order so a doc with both (shouldn't normally happen) prefers "Created".
+const DATE_METADATA_KEYS = ["Created", "Date"];
+
+function docTimestamp(node: DocNode): number | undefined {
+  for (const key of DATE_METADATA_KEYS) {
+    const raw = node.metadata[key];
+    if (!raw) {
+      continue;
+    }
+    const parsed = Date.parse(raw);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return undefined;
+}
+
+/** Newest first, so a category's list leads with recent work instead of its first-ever file. Sorts by
+ * parsed `Created`/`Date` front-matter when present; falls back to reverse title order otherwise (still
+ * newest-first for sequentially-numbered types like ADR-* and FR-* that don't declare a date). */
+export function sortDocsReverseChronological(nodes: DocNode[]): DocNode[] {
+  return [...nodes].sort((a, b) => {
+    const tsA = docTimestamp(a);
+    const tsB = docTimestamp(b);
+    if (tsA !== undefined && tsB !== undefined && tsA !== tsB) {
+      return tsB - tsA;
+    }
+    if (tsA !== undefined && tsB === undefined) {
+      return -1;
+    }
+    if (tsB !== undefined && tsA === undefined) {
+      return 1;
+    }
+    return b.title.localeCompare(a.title);
+  });
+}
+
 function directoryOf(relativePath: string): string {
   const idx = relativePath.lastIndexOf("/");
   return idx === -1 ? "" : relativePath.slice(0, idx);

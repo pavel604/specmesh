@@ -1,5 +1,12 @@
 import * as assert from "node:assert/strict";
-import { flattenDocTypes, buildParentTypeMap, findDuplicateTypes, buildChildTypeOrder, attachParentIds } from "../crawler/docTypeTree";
+import {
+  flattenDocTypes,
+  buildParentTypeMap,
+  findDuplicateTypes,
+  buildChildTypeOrder,
+  attachParentIds,
+  sortDocsReverseChronological,
+} from "../crawler/docTypeTree";
 import { DocTypeDefinition, DocNode } from "../model/types";
 
 const flatDefs: DocTypeDefinition[] = [
@@ -128,6 +135,41 @@ suite("attachParentIds", () => {
   test("leaves nodes unmatched when defs declare no nesting", () => {
     const plan = makeNode({ id: "plan", type: "fr-plan", relativePath: "docs/FR-001-x/plan.v1.md" });
     assert.deepEqual(attachParentIds([plan], []), [plan]);
+  });
+});
+
+suite("sortDocsReverseChronological", () => {
+  test("sorts by Created descending when every node has it", () => {
+    const oldest = makeNode({ id: "a", title: "A", metadata: { Created: "2026-09-01" } });
+    const newest = makeNode({ id: "b", title: "B", metadata: { Created: "2026-09-18" } });
+    const middle = makeNode({ id: "c", title: "C", metadata: { Created: "2026-09-10" } });
+
+    const sorted = sortDocsReverseChronological([oldest, newest, middle]).map((n) => n.id);
+    assert.deepEqual(sorted, ["b", "c", "a"]);
+  });
+
+  test("falls back to Date when Created is absent", () => {
+    const oldest = makeNode({ id: "a", metadata: { Date: "2026-09-01" } });
+    const newest = makeNode({ id: "b", metadata: { Date: "2026-09-18" } });
+
+    const sorted = sortDocsReverseChronological([oldest, newest]).map((n) => n.id);
+    assert.deepEqual(sorted, ["b", "a"]);
+  });
+
+  test("ranks dated nodes above undated ones", () => {
+    const dated = makeNode({ id: "dated", metadata: { Created: "2026-01-01" } });
+    const undated = makeNode({ id: "undated", metadata: {} });
+
+    const sorted = sortDocsReverseChronological([undated, dated]).map((n) => n.id);
+    assert.deepEqual(sorted, ["dated", "undated"]);
+  });
+
+  test("falls back to reverse title order when no dates are present", () => {
+    const a = makeNode({ id: "a", title: "ADR-001", metadata: {} });
+    const b = makeNode({ id: "b", title: "ADR-002", metadata: {} });
+
+    const sorted = sortDocsReverseChronological([a, b]).map((n) => n.id);
+    assert.deepEqual(sorted, ["b", "a"]);
   });
 });
 

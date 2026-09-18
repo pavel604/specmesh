@@ -1,6 +1,11 @@
 import * as vscode from "vscode";
 import { DeclaredRepo, DocNode, Problem } from "../model/types";
 import { getDocTypeDefinitions } from "../crawler/docTypes";
+import { sortDocsReverseChronological } from "../crawler/docTypeTree";
+
+// keeps a first-ever feature's docs from pushing the rest of a long category off-screen -- "Show N more…"
+// (see TreeItemData's "more" kind) reveals the rest on demand.
+const MAX_VISIBLE_DOCS_PER_CATEGORY = 10;
 
 type LabelFormat = "title" | "filename" | "both";
 
@@ -28,7 +33,8 @@ type TreeItemData =
   | { kind: "category"; folderName: string; type: string; label: string }
   | { kind: "doc"; node: DocNode }
   | { kind: "repo"; repo: DeclaredRepo }
-  | { kind: "missing"; problem: Problem };
+  | { kind: "missing"; problem: Problem }
+  | { kind: "more"; folderName: string; type: string; remaining: number };
 
 export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
   private readonly _onDidChangeTreeData = new vscode.EventEmitter<void>();
@@ -44,6 +50,9 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
   private childTypeOrder = new Map<string, string[]>();
   private loading = true;
   private configExists = new Map<string, boolean>();
+  // categories the user has chosen to fully expand past the MAX_VISIBLE_DOCS_PER_CATEGORY cap, keyed
+  // `${folderName}::${type}` -- persists across refreshes so it doesn't re-collapse on every file watch tick.
+  private expandedCategories = new Set<string>();
 
   update(
     nodes: DocNode[],
@@ -157,6 +166,12 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
     this._onDidChangeTreeData.fire();
   }
 
+  /** Lifts the MAX_VISIBLE_DOCS_PER_CATEGORY cap for one category, invoked by its "Show N more…" item. */
+  expandCategory(folderName: string, type: string): void {
+    this.expandedCategories.add(`${folderName}::${type}`);
+    this._onDidChangeTreeData.fire();
+  }
+
   getTreeItem(element: TreeItemData): vscode.TreeItem {
     if (element.kind === "loading") {
       const item = new vscode.TreeItem("Loading docs…", vscode.TreeItemCollapsibleState.None);
@@ -209,6 +224,17 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
       item.description = "missing";
       item.tooltip = element.problem.message;
       item.iconPath = new vscode.ThemeIcon("error", new vscode.ThemeColor("list.errorForeground"));
+      return item;
+    }
+
+    if (element.kind === "more") {
+      const item = new vscode.TreeItem(`Show ${element.remaining} more…`, vscode.TreeItemCollapsibleState.None);
+      item.iconPath = new vscode.ThemeIcon("ellipsis");
+      item.command = {
+        command: "specmesh.expandCategory",
+        title: "Show More Docs",
+        arguments: [element.folderName, element.type],
+      };
       return item;
     }
 
@@ -326,14 +352,27 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
         return [...missing, ...present];
       }
 
-      const docs: TreeItemData[] = this.nodes
-        .filter((n) => n.workspaceFolderName === element.folderName && n.type === element.type && !n.parentId)
-        .sort((a, b) => a.title.localeCompare(b.title))
-        .map((node) => ({ kind: "doc", node }));
+      const sortedDocs = sortDocsReverseChronological(
+        this.nodes.filter((n) => n.workspaceFolderName === element.folderName && n.type === element.type && !n.parentId)
+      );
+      const expanded = this.expandedCategories.has(`${element.folderName}::${element.type}`);
+      const visibleDocs = expanded ? sortedDocs : sortedDocs.slice(0, MAX_VISIBLE_DOCS_PER_CATEGORY);
+      const docs: TreeItemData[] = visibleDocs.map((node) => ({ kind: "doc", node }));
+      const more: TreeItemData[] =
+        !expanded && sortedDocs.length > MAX_VISIBLE_DOCS_PER_CATEGORY
+          ? [
+              {
+                kind: "more" as const,
+                folderName: element.folderName,
+                type: element.type,
+                remaining: sortedDocs.length - MAX_VISIBLE_DOCS_PER_CATEGORY,
+              },
+            ]
+          : [];
       const missing: TreeItemData[] = this.missing
         .filter((p) => p.workspaceFolderName === element.folderName && p.docType === element.type)
         .map((problem) => ({ kind: "missing", problem }));
-      return [...missing, ...docs];
+      return [...missing, ...docs, ...more];
     }
 
     if (element.kind === "doc") {
