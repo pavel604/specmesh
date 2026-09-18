@@ -2,6 +2,11 @@
 
 All notable changes to the "specmesh" extension are documented in this file.
 
+## [0.13.0] - 2026-09-18
+
+- Docs Explorer category lists (FR Specs, ADRs, etc.) now sort newest-first (by `Created`/`Date` front-matter)
+  and cap at 10 visible docs by default, with a "Show N more…" row to expand to the full list.
+
 ## [0.12.1] - 2026-09-18
 
 - Fixed high-severity `serialize-javascript`/`diff` transitive dev-dependency vulnerabilities (pulled in via
