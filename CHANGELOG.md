@@ -2,6 +2,12 @@
 
 All notable changes to the "specmesh" extension are documented in this file.
 
+## [0.12.1] - 2026-09-18
+
+- Fixed high-severity `serialize-javascript`/`diff` transitive dev-dependency vulnerabilities (pulled in via
+  `@vscode/test-cli`'s bundled `mocha`) by pinning safe versions tree-wide via `package.json` `overrides`. No
+  runtime/shipped-extension code is affected — this only touches the test toolchain.
+
 ## [0.12.0] - 2026-09-18
 
 - Add FR-014: declared-repo clone/sync automation — auto-prompt to clone newly declared `repos:` entries and to
