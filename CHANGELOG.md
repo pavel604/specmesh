@@ -2,6 +2,12 @@
 
 All notable changes to the "specmesh" extension are documented in this file.
 
+## [0.12.0] - 2026-09-18
+
+- Add FR-014: declared-repo clone/sync automation — auto-prompt to clone newly declared `repos:` entries and to
+  delete removed ones, a `specmesh: Sync/Clone Repos` command to retry failed clones, and auto-mirroring of the
+  central spec repo's remote into `specRepoRemote`.
+
 ## [0.11.0] - 2026-09-17
 
 - Docs Explorer now nests FR plan/tasks/walkthrough docs under their matching spec doc (same FR folder + version)
