@@ -5,7 +5,7 @@ import { DocNode } from "../model/types";
 import { execGit } from "./gitPlumbing";
 import { findSpecGitRoot, isUnderPath, setRepoUntracked } from "./specRepo";
 
-function toPosix(p: string): string {
+export function toPosix(p: string): string {
   return p.split(path.sep).join("/");
 }
 

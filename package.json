@@ -303,6 +303,10 @@
       {
         "command": "specmesh.fetchCentral",
         "title": "Fetch"
+      },
+      {
+        "command": "specmesh.syncCloneRepos",
+        "title": "specmesh: Sync/Clone Repos"
       }
     ],
     "submenus": [
@@ -356,6 +360,10 @@
         },
         {
           "command": "specmesh.showCentralHistory",
+          "group": "3_specmesh"
+        },
+        {
+          "command": "specmesh.syncCloneRepos",
           "group": "3_specmesh"
         }
       ],

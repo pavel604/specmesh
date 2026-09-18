@@ -40,7 +40,7 @@ async function pickRootFolder(
   return pick?.folder;
 }
 
-async function ensureGitignoreEntry(rootPath: string, line: string): Promise<void> {
+export async function ensureGitignoreEntry(rootPath: string, line: string): Promise<void> {
   const uri = vscode.Uri.file(path.join(rootPath, ".gitignore"));
   let content = "";
   try {

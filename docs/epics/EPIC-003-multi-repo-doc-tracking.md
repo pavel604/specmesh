@@ -20,6 +20,7 @@ duplicating the file on disk or disturbing each child repo's own git history for
 | [FR-010](../FR-010-central-doc-history-scm-view/spec.v1.md) | Central doc history as a custom Source Control view | Done |
 | [FR-011](../FR-011-central-scm-branch-commit/spec.v1.md) | Branch, stage & commit in the central SCM view | Done |
 | [FR-012](../FR-012-central-scm-remote-sync/spec.v1.md) | Remote add/remove/edit, push, pull & fetch in the central SCM view | Done |
+| [FR-014](../FR-014-repo-clone-sync/spec.v1.md) | Declared-repo clone/sync automation (autoclone, removed-folder cleanup) | Done |
 
 ## Dependencies
 
@@ -59,3 +60,11 @@ duplicating the file on disk or disturbing each child repo's own git history for
   `Permission denied (publickey)` since these git calls run in a non-interactive child process with no TTY for
   a passphrase prompt — fixed with a "Copy Terminal Command" button on the failure warning so the user can run
   the exact equivalent command interactively instead.
+- 2026-09-18: Added FR-014 to automate declared-repo cloning/sync — closes the gap where `repos:` (FR-008) was
+  purely declarative with no actual clone/cleanup automation.
+- 2026-09-18: FR-014 done. New/removed `repos:` entries now prompt to clone/delete per-entry in declaration
+  order; a `specmesh: Sync/Clone Repos` command retries failed clones; the central repo's remote is
+  auto-mirrored into each declared repo's `specRepoRemote`. Fixed two review-round issues before sign-off: a
+  failed folder-delete no longer aborts the remaining prompts or leaves the diff-tracking baseline stale, and
+  folder deletion now goes through Node's `fs.promises.rm` instead of `vscode.workspace.fs.delete` +
+  `useTrash`, which proved unreliable for large git-repo folders on Windows.

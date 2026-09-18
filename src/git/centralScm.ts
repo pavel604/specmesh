@@ -3,6 +3,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { execGit } from "./gitPlumbing";
 import { gitDirFor, isPathUntracked, isUnderPath } from "./specRepo";
+import { pickMirroredRemoteUrl } from "./repoSync";
+import { writeSpecRepoRemote } from "../crawler/repoConfig";
 import { crawlWorkspace } from "../crawler/crawler";
 import { DocNode } from "../model/types";
 
@@ -498,9 +500,21 @@ async function upstreamFor(gitDir: string, branch: string): Promise<{ remote: st
   return parseUpstream(output);
 }
 
+/** Re-lists the central repo's remotes and mirrors the result into `.specmesh.yml`'s `specRepoRemote` (see
+ * FR-014), so the two never drift apart from a manual "Manage Remotes…" edit. */
+async function mirrorSpecRepoRemote(gitDir: string, root: vscode.WorkspaceFolder): Promise<void> {
+  const remotes = parseRemoteList(await execGit(["--git-dir", gitDir, "remote", "-v"]));
+  const action = pickMirroredRemoteUrl(remotes);
+  if (action.kind === "set") {
+    await writeSpecRepoRemote(root, action.url);
+  } else if (action.kind === "clear") {
+    await writeSpecRepoRemote(root, undefined);
+  }
+}
+
 /** Prompts for a remote name (defaulting to `origin` if left blank and unused) and URL, then runs
  * `remote add`. Returns the new remote's name, or `undefined` if the user cancelled. */
-async function addRemoteFlow(gitDir: string): Promise<string | undefined> {
+async function addRemoteFlow(gitDir: string, root: vscode.WorkspaceFolder): Promise<string | undefined> {
   const existing = parseRemoteList(await execGit(["--git-dir", gitDir, "remote", "-v"]));
   const originTaken = existing.some((r) => r.name === "origin");
 
@@ -524,15 +538,16 @@ async function addRemoteFlow(gitDir: string): Promise<string | undefined> {
 
   await execGit(["--git-dir", gitDir, "remote", "add", name, url]);
   vscode.window.showInformationMessage(`specmesh: added remote "${name}".`);
+  await mirrorSpecRepoRemote(gitDir, root);
   return name;
 }
 
 /** Resolves which remote push/pull/fetch should use when the current branch has no upstream configured yet:
  * with no remotes, runs the add-remote flow inline; with exactly one, uses it directly; with several, asks. */
-async function pickOrAddRemote(gitDir: string): Promise<string | undefined> {
+async function pickOrAddRemote(gitDir: string, root: vscode.WorkspaceFolder): Promise<string | undefined> {
   const remotes = parseRemoteList(await execGit(["--git-dir", gitDir, "remote", "-v"]));
   if (remotes.length === 0) {
-    return addRemoteFlow(gitDir);
+    return addRemoteFlow(gitDir, root);
   }
   if (remotes.length === 1) {
     return remotes[0].name;
@@ -566,7 +581,7 @@ export async function manageCentralRemotes(outputChannel: vscode.OutputChannel):
       return;
     }
     if (!pick.name) {
-      await addRemoteFlow(gitDir);
+      await addRemoteFlow(gitDir, activeProvider.root);
       return;
     }
     const remoteName = pick.name;
@@ -585,6 +600,7 @@ export async function manageCentralRemotes(outputChannel: vscode.OutputChannel):
       }
       await execGit(["--git-dir", gitDir, "remote", "set-url", remoteName, url]);
       vscode.window.showInformationMessage(`specmesh: updated remote "${remoteName}".`);
+      await mirrorSpecRepoRemote(gitDir, activeProvider.root);
     } else if (action === "Remove") {
       const confirm = await vscode.window.showWarningMessage(
         `Remove remote "${remoteName}"? This can't be undone.`,
@@ -596,6 +612,7 @@ export async function manageCentralRemotes(outputChannel: vscode.OutputChannel):
       }
       await execGit(["--git-dir", gitDir, "remote", "remove", remoteName]);
       vscode.window.showInformationMessage(`specmesh: removed remote "${remoteName}".`);
+      await mirrorSpecRepoRemote(gitDir, activeProvider.root);
     }
   } catch (err) {
     const message = (err as Error).message;
@@ -652,7 +669,7 @@ export async function pushCentral(outputChannel: vscode.OutputChannel): Promise<
     remote = upstream.remote;
     pushArgs = ["push"];
   } else {
-    const picked = await pickOrAddRemote(gitDir);
+    const picked = await pickOrAddRemote(gitDir, activeProvider.root);
     if (!picked) {
       return;
     }
@@ -693,7 +710,7 @@ export async function pullCentral(outputChannel: vscode.OutputChannel): Promise<
     remoteBranch = upstream.branch;
     pullArgs = ["pull"];
   } else {
-    const picked = await pickOrAddRemote(gitDir);
+    const picked = await pickOrAddRemote(gitDir, activeProvider.root);
     if (!picked) {
       return;
     }
@@ -742,7 +759,7 @@ export async function fetchCentral(outputChannel: vscode.OutputChannel): Promise
 
   let remote = upstream?.remote;
   if (!remote) {
-    remote = await pickOrAddRemote(gitDir);
+    remote = await pickOrAddRemote(gitDir, activeProvider.root);
     if (!remote) {
       return;
     }

@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { parse as parseYaml } from "yaml";
+import { parse as parseYaml, parseDocument } from "yaml";
 import { DocTypeDefinition, RepoManifestEntry } from "../model/types";
 import { findDuplicateTypes } from "./docTypeTree";
 
@@ -17,6 +17,10 @@ export interface RepoConfig {
   /** human-readable reasons any `track:` entries were dropped for reusing a `type` already declared
    * elsewhere in the tree (top-level or nested) */
   trackErrors?: string[];
+  /** git remote URL for the local `.specmesh/spec.git` central tracking repo, when declared */
+  specRepoRemote?: string;
+  /** human-readable reason a declared `specRepoRemote` was dropped as invalid */
+  specRepoRemoteError?: string;
 }
 
 /** Drops every occurrence of a `type` after its first (depth-first, top-level before children), dropping a
@@ -64,6 +68,19 @@ export function parseRepoManifest(raw: unknown): { repos: RepoManifestEntry[]; e
   return { repos, errors };
 }
 
+/** Validates a raw `specRepoRemote:` YAML value, dropping (and explaining) anything that isn't a non-empty
+ * string -- mirrors how `repos[].remote` is validated today. */
+export function parseSpecRepoRemote(raw: unknown): { value?: string; error?: string } {
+  if (raw === undefined) {
+    return {};
+  }
+  const value = typeof raw === "string" ? raw.trim() : "";
+  if (!value) {
+    return { error: `specRepoRemote must be a non-empty string, got ${JSON.stringify(raw)}.` };
+  }
+  return { value };
+}
+
 export async function loadRepoConfig(folder: vscode.WorkspaceFolder): Promise<RepoConfig> {
   const uri = vscode.Uri.joinPath(folder.uri, CONFIG_FILENAME);
   let content: string;
@@ -76,6 +93,9 @@ export async function loadRepoConfig(folder: vscode.WorkspaceFolder): Promise<Re
 
   const parsed = (parseYaml(content) ?? {}) as Partial<RepoConfig>;
   const { repos, errors } = parseRepoManifest(parsed.repos);
+  const { value: specRepoRemote, error: specRepoRemoteError } = parseSpecRepoRemote(
+    (parsed as Record<string, unknown>).specRepoRemote
+  );
 
   const rawTrack = Array.isArray(parsed.track) && parsed.track.length > 0 ? parsed.track : undefined;
   const duplicateTypes = rawTrack ? findDuplicateTypes(rawTrack) : [];
@@ -89,7 +109,31 @@ export async function loadRepoConfig(folder: vscode.WorkspaceFolder): Promise<Re
     repos: repos.length > 0 ? repos : undefined,
     repoErrors: errors.length > 0 ? errors : undefined,
     trackErrors: trackErrors.length > 0 ? trackErrors : undefined,
+    specRepoRemote,
+    specRepoRemoteError,
   };
+}
+
+/** Sets (or, when `value` is `undefined`, deletes) `specRepoRemote:` in `folder`'s `.specmesh.yml`, preserving
+ * the rest of the file's formatting/comments via `yaml`'s CST-editing `Document` API instead of a full
+ * parse-and-restringify round-trip. Creates the file if it doesn't exist yet. */
+export async function writeSpecRepoRemote(folder: vscode.WorkspaceFolder, value: string | undefined): Promise<void> {
+  const uri = vscode.Uri.joinPath(folder.uri, CONFIG_FILENAME);
+  let content = "";
+  try {
+    content = Buffer.from(await vscode.workspace.fs.readFile(uri)).toString("utf8");
+  } catch {
+    // no .specmesh.yml yet -- start from an empty document
+  }
+
+  const doc = parseDocument(content);
+  if (value === undefined) {
+    doc.delete("specRepoRemote");
+  } else {
+    doc.set("specRepoRemote", value);
+  }
+
+  await vscode.workspace.fs.writeFile(uri, Buffer.from(doc.toString(), "utf8"));
 }
 
 /** A glob with no wildcard characters names one specific expected file, so a zero-match result means it's missing. */

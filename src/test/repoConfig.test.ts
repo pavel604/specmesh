@@ -1,5 +1,5 @@
 import * as assert from "node:assert/strict";
-import { parseRepoManifest, dropLaterDuplicates } from "../crawler/repoConfig";
+import { parseRepoManifest, dropLaterDuplicates, parseSpecRepoRemote } from "../crawler/repoConfig";
 import { findDuplicateTypes } from "../crawler/docTypeTree";
 import { DocTypeDefinition } from "../model/types";
 
@@ -38,6 +38,30 @@ suite("parseRepoManifest", () => {
     assert.deepEqual(result.repos, []);
     assert.equal(result.errors.length, 1);
     assert.match(result.errors[0], /must be relative/);
+  });
+});
+
+suite("parseSpecRepoRemote", () => {
+  test("returns an empty result when absent", () => {
+    assert.deepEqual(parseSpecRepoRemote(undefined), {});
+  });
+
+  test("returns the trimmed value for a valid string", () => {
+    assert.deepEqual(parseSpecRepoRemote("  git@github.com:pavel604/specmesh.git  "), {
+      value: "git@github.com:pavel604/specmesh.git",
+    });
+  });
+
+  test("drops a non-string value and explains why", () => {
+    const result = parseSpecRepoRemote(42);
+    assert.equal(result.value, undefined);
+    assert.match(result.error!, /non-empty string/);
+  });
+
+  test("drops an empty/whitespace-only string and explains why", () => {
+    const result = parseSpecRepoRemote("   ");
+    assert.equal(result.value, undefined);
+    assert.match(result.error!, /non-empty string/);
   });
 });
 

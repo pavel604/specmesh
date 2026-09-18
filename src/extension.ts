@@ -6,9 +6,10 @@ import { applyDiagnostics } from "./views/diagnostics";
 import { scaffoldSdlc } from "./scaffold/scaffold";
 import { openOrCreateConfig, addNewDoc } from "./scaffold/newDoc";
 import { registerSpecmeshTools } from "./tools/specmeshTools";
-import { DocNode } from "./model/types";
+import { DeclaredRepo, DocNode } from "./model/types";
 import { enableCentralTracking, findSpecGitRoot, showCentralHistory } from "./git/specRepo";
 import { migrateRepoToCentral, pickRepoTarget, untrackRepoFromCentral } from "./git/repoMigration";
+import { diffDeclaredRepos, promptForNewRepos, promptForRemovedRepos, syncCloneRepos } from "./git/repoSync";
 import {
   commitCentral,
   ensureCentralScmProvider,
@@ -61,6 +62,10 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const treeView = vscode.window.createTreeView("specmesh.docsExplorer", { treeDataProvider: treeProvider });
 
+  // Baseline for detecting newly-declared/removed `repos:` entries (FR-014); `undefined` until the first
+  // successful crawl, so no clone/delete prompts fire retroactively for drift that predates this session.
+  let previousRepos: DeclaredRepo[] | undefined;
+
   const refresh = async (): Promise<void> => {
     treeView.message = "specmesh: indexing docs\u2026";
     const { nodes, missingProblems, categoryOrder, childTypeOrder, repos } = await crawlWorkspace();
@@ -84,6 +89,29 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 
     await refreshCentralScm(nodes);
+
+    const oldRepos = previousRepos;
+    previousRepos = repos;
+    if (oldRepos) {
+      const { added, removed } = diffDeclaredRepos(oldRepos, repos);
+      const folderNames = new Set([...added, ...removed].map((r) => r.workspaceFolderName));
+      for (const folderName of folderNames) {
+        const folder = vscode.workspace.workspaceFolders?.find((f) => f.name === folderName);
+        if (!folder) {
+          continue;
+        }
+        await promptForNewRepos(
+          added.filter((r) => r.workspaceFolderName === folderName),
+          folder,
+          outputChannel
+        );
+        await promptForRemovedRepos(
+          removed.filter((r) => r.workspaceFolderName === folderName),
+          folder,
+          outputChannel
+        );
+      }
+    }
   };
 
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
@@ -215,6 +243,13 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand("specmesh.showCentralHistory", async () => {
       await showCentralHistory(outputChannel);
+    }),
+    vscode.commands.registerCommand("specmesh.syncCloneRepos", async () => {
+      const { clonedSpecRepo } = await syncCloneRepos(outputChannel);
+      if (clonedSpecRepo) {
+        ensureCentralScmProvider(findSpecGitRoot(), context, outputChannel);
+      }
+      await refresh();
     }),
     ...registerSpecmeshTools(context, refresh)
   );
