@@ -99,30 +99,33 @@ Phase 1. Otherwise make the reasonable call and proceed.
 
 1. Explore the actual codebase in the target repo(s) — relevant components/pages, services, controllers, models,
    data-access code, etc. — enough to ground the plan in real files and existing patterns/conventions.
-2. Write `FEATURE_DIR/plan.v1.md`:
+2. Write `FEATURE_DIR/plan.v1.md`. Group the work into topic-based `### <Title>` subsections (by layer, model,
+   or feature area — whatever grouping fits the change), each opening with a brief functional description before
+   its file list:
 
    ```markdown
    # Implementation Plan: FR-<num> <Feature Title> (v1)
 
    **Status**: Draft
 
-   ## Affected Files/Projects
+   ## Approach
+
+   ### <Change Title — e.g. "Extend Task model with due dates">
+
+   <1-3 sentences: what this change introduces or fixes, and why — not just which files, the actual
+   functionality/behavior being added>
+
+   **Files:**
 
    - <path> — <what changes>
 
-   ## Approach
+   ### <Next Change Title>
 
-   ### Front-end (if applicable)
+   <same: functional description first, then files>
 
-   <approach, following this repo's existing UI conventions>
+   **Files:**
 
-   ### Back-end (if applicable)
-
-   <approach, following this repo's existing service/controller conventions>
-
-   ### Data
-
-   <new/changed models, contracts, migrations>
+   - <path> — <what changes>
 
    ## Sequencing
 

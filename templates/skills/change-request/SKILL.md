@@ -89,9 +89,12 @@ This is delta-only — do not restate the whole implementation plan. Write `plan
 
 ## Changes to Apply
 
-- <requirement ID> — <old behavior> → <new behavior>
+### <Change Title — e.g. requirement ID or short label>
 
-## Affected Files
+<1-3 sentences: old behavior → new behavior, and why — not just which files, the actual functionality/fix
+being introduced>
+
+**Files:**
 
 - <path> — <what changes>
 
@@ -100,8 +103,9 @@ This is delta-only — do not restate the whole implementation plan. Write `plan
 - <notes>
 ```
 
-Only explore the code paths implicated by the changed requirements — do not proactively re-scan the rest of the
-codebase for unrelated inconsistencies. Present the plan (point at `plan.v{NEW_REV}.md`).
+Group changes into topic-based `### <Title>` subsections, each opening with a brief functional description
+before its file list. Only explore the code paths implicated by the changed requirements — do not proactively
+re-scan the rest of the codebase for unrelated inconsistencies. Present the plan (point at `plan.v{NEW_REV}.md`).
 
 **Gate.** Use the ask-questions tool: header "Plan Review", question "Approve this migration plan, or make changes?",
 options `Approve` / `Decline` / `Refine` (allow freeform input). Do not proceed on an ordinary chat reply — always
@@ -116,8 +120,9 @@ On approval, set `Status` to `Approved`.
 
 ## Phase 3 — Migration tasks
 
-Write `tasks.v{NEW_REV}.md`: an ordered checkbox list scoped strictly to the migration plan's "Changes to Apply" and
-"Affected Files" — no unrelated cleanup tasks. Show the list, then **proceed automatically to Phase 4** — no gate.
+Write `tasks.v{NEW_REV}.md`: an ordered checkbox list scoped strictly to the migration plan's "Changes to Apply"
+subsections (and the files listed under each) — no unrelated cleanup tasks. Show the list, then **proceed
+automatically to Phase 4** — no gate.
 
 ## Phase 4 — Implementation
 
