@@ -31,7 +31,15 @@
         {
           "id": "specmesh.docsExplorer",
           "name": "Docs",
-          "icon": "media/icon.svg"
+          "icon": "media/icon.svg",
+          "when": "specmesh.viewMode != 'graph'"
+        },
+        {
+          "id": "specmesh.docsGraph",
+          "name": "Docs",
+          "type": "webview",
+          "icon": "media/icon.svg",
+          "when": "specmesh.viewMode == 'graph'"
         }
       ]
     },
@@ -311,6 +319,11 @@
       {
         "command": "specmesh.syncCloneRepos",
         "title": "specmesh: Sync/Clone Repos"
+      },
+      {
+        "command": "specmesh.toggleGraphView",
+        "title": "specmesh: Toggle Graph View",
+        "icon": "$(type-hierarchy-sub)"
       }
     ],
     "submenus": [
@@ -328,9 +341,14 @@
     "menus": {
       "view/title": [
         {
+          "command": "specmesh.toggleGraphView",
+          "when": "view == specmesh.docsExplorer || view == specmesh.docsGraph",
+          "group": "navigation@1"
+        },
+        {
           "submenu": "specmesh.docsExplorerActions",
           "when": "view == specmesh.docsExplorer",
-          "group": "navigation"
+          "group": "navigation@2"
         }
       ],
       "specmesh.docsExplorerActions": [

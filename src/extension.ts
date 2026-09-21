@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { crawlWorkspace } from "./crawler/crawler";
 import { computeProblems } from "./crawler/graph";
 import { DocsTreeProvider } from "./views/docsTreeProvider";
+import { GraphViewProvider } from "./views/graphViewProvider";
 import { applyDiagnostics } from "./views/diagnostics";
 import { scaffoldSdlc } from "./scaffold/scaffold";
 import { openOrCreateConfig, addNewDoc } from "./scaffold/newDoc";
@@ -57,10 +58,13 @@ export function computeStatusMessage(
 
 export function activate(context: vscode.ExtensionContext): void {
   const treeProvider = new DocsTreeProvider();
+  const graphViewProvider = new GraphViewProvider();
   const diagnostics = vscode.languages.createDiagnosticCollection("specmesh");
   const outputChannel = vscode.window.createOutputChannel("specmesh");
 
   const treeView = vscode.window.createTreeView("specmesh.docsExplorer", { treeDataProvider: treeProvider });
+  let viewMode: "tree" | "graph" = "tree";
+  void vscode.commands.executeCommand("setContext", "specmesh.viewMode", viewMode);
 
   // Baseline for detecting newly-declared/removed `repos:` entries (FR-014); `undefined` until the first
   // successful crawl, so no clone/delete prompts fire retroactively for drift that predates this session.
@@ -71,6 +75,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const { nodes, missingProblems, categoryOrder, childTypeOrder, repos } = await crawlWorkspace();
     const problems = [...computeProblems(nodes), ...missingProblems];
     treeProvider.update(nodes, problems, categoryOrder, childTypeOrder, repos);
+    graphViewProvider.update(nodes);
     applyDiagnostics(diagnostics, problems);
 
     const configExists = new Map<string, boolean>();
@@ -148,6 +153,7 @@ export function activate(context: vscode.ExtensionContext): void {
     watcher,
     configWatcher,
     settingsWatcher,
+    vscode.window.registerWebviewViewProvider("specmesh.docsGraph", graphViewProvider),
     vscode.commands.registerCommand("specmesh.refresh", refresh),
     vscode.commands.registerCommand("specmesh.showOrphans", async () => {
       const { nodes } = await crawlWorkspace();
@@ -253,6 +259,10 @@ export function activate(context: vscode.ExtensionContext): void {
         ensureCentralScmProvider(findSpecGitRoot(), context, outputChannel);
       }
       await refresh();
+    }),
+    vscode.commands.registerCommand("specmesh.toggleGraphView", async () => {
+      viewMode = viewMode === "tree" ? "graph" : "tree";
+      await vscode.commands.executeCommand("setContext", "specmesh.viewMode", viewMode);
     }),
     ...registerSpecmeshTools(context, refresh)
   );

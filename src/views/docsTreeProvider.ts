@@ -2,24 +2,13 @@ import * as vscode from "vscode";
 import { DeclaredRepo, DocNode, Problem } from "../model/types";
 import { getDocTypeDefinitions } from "../crawler/docTypes";
 import { sortDocsReverseChronological } from "../crawler/docTypeTree";
+import { iconForDoc } from "./docIcon";
 
 // keeps a first-ever feature's docs from pushing the rest of a long category off-screen -- "Show N more…"
 // (see TreeItemData's "more" kind) reveals the rest on demand.
 const MAX_VISIBLE_DOCS_PER_CATEGORY = 10;
 
 type LabelFormat = "title" | "filename" | "both";
-
-// instructions/skill get their own icon so they're visually distinct from plain docs (ADRs, reference, FR-*, etc.).
-// Matched by filename, not just doc type, since a repo's .specmesh.yml may lump them into one catch-all type.
-function iconForDoc(type: string, fileName: string): string {
-  if (type === "instructions" || fileName.endsWith(".instructions.md")) {
-    return "checklist";
-  }
-  if (type === "skill" || fileName.toUpperCase() === "SKILL.MD") {
-    return "tools";
-  }
-  return "book";
-}
 
 // "Declared Repos" (repos:) isn't a doc type from getDocTypeDefinitions(), so its category label needs a
 // constant of its own -- must match the categoryLabel crawler.ts uses for repo-manifest Problems.

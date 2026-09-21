@@ -20,6 +20,7 @@ from the tree, without hand-crafting file paths or leaving VS Code's Explorer vi
 | [FR-006](../FR-006-docs-tree-category-order/spec.v1.md) | Docs Tree Category Order | Done |
 | [FR-013](../FR-013-docs-tree-nesting/spec.v1.md) | Docs Tree Nesting | Done |
 | [FR-015](../FR-015-docs-tree-category-pagination/spec.v1.md) | Docs Tree Category Recency Sort & Pagination | Done |
+| [FR-016](../FR-016-docs-dependency-graph-view/spec.v1.md) | Docs Dependency Graph View | Done |
 
 ## Dependencies
 
