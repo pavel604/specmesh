@@ -2,6 +2,12 @@
 
 All notable changes to the "specmesh" extension are documented in this file.
 
+## [0.14.0] - 2026-09-21
+
+- Added a Docs Dependency Graph View, toggleable alongside the existing tree view: renders tracked docs as
+  nodes with markdown-link and doc-type nesting edges, isolates unlinked docs as strays, and supports
+  pan/zoom, hover tooltips, and node labels.
+
 ## [0.13.0] - 2026-09-18
 
 - Docs Explorer category lists (FR Specs, ADRs, etc.) now sort newest-first (by `Created`/`Date` front-matter)
