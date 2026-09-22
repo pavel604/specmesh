@@ -2,6 +2,10 @@
 
 All notable changes to the "specmesh" extension are documented in this file.
 
+## [0.15.1] - 2026-09-22
+
+- Docs tree search filter now also matches a doc's body content, not just its title/filename.
+
 ## [0.15.0] - 2026-09-22
 
 - Add a live search filter to the Docs Explorer tree; fix `${workspaceFolder}` markdown link resolution
