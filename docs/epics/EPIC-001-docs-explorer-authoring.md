@@ -21,6 +21,7 @@ from the tree, without hand-crafting file paths or leaving VS Code's Explorer vi
 | [FR-013](../FR-013-docs-tree-nesting/spec.v1.md) | Docs Tree Nesting | Done |
 | [FR-015](../FR-015-docs-tree-category-pagination/spec.v1.md) | Docs Tree Category Recency Sort & Pagination | Done |
 | [FR-016](../FR-016-docs-dependency-graph-view/spec.v1.md) | Docs Dependency Graph View | Done |
+| [FR-017](../FR-017-docs-tree-search-filter/spec.v1.md) | Docs Tree Search Filter | Done |
 
 ## Dependencies
 
@@ -31,3 +32,4 @@ from the tree, without hand-crafting file paths or leaving VS Code's Explorer vi
 - 2026-09-11: Epic created.
 - FR-013 added nested rendering (FR plan/tasks/walkthrough docs nest under their matching spec doc).
 - FR-015 added newest-first sorting and a 10-doc cap (with "Show N more…" expand) to category doc lists.
+- FR-017 added a live title-bar search filter for the Docs tree, narrowing it to matching docs.

@@ -86,6 +86,10 @@ would show a false "missing" entry.
   or to create one if it doesn't exist yet — and an inline **Add new…** button to scaffold a new tracked doc.
 - Git's own modified/added decorations apply automatically (see above) — nothing specmesh-specific to
   configure for that.
+- A search icon in the view's title bar opens a live filter box — typing narrows the tree to only docs whose
+  title or filename contains that text (matching as you type, no need to press Enter); the status row is
+  prefixed with the active filter so it's clear the tree is narrowed rather than empty. A "clear filter" icon
+  appears next to it while a filter is active.
 
 ## Per-repo config: `.specmesh.yml`
 

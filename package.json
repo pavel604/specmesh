@@ -324,6 +324,16 @@
         "command": "specmesh.toggleGraphView",
         "title": "specmesh: Toggle Graph View",
         "icon": "$(type-hierarchy-sub)"
+      },
+      {
+        "command": "specmesh.filterDocs",
+        "title": "specmesh: Filter Docs…",
+        "icon": "$(search)"
+      },
+      {
+        "command": "specmesh.clearDocsFilter",
+        "title": "specmesh: Clear Docs Filter",
+        "icon": "$(clear-all)"
       }
     ],
     "submenus": [
@@ -346,9 +356,19 @@
           "group": "navigation@1"
         },
         {
-          "submenu": "specmesh.docsExplorerActions",
+          "command": "specmesh.filterDocs",
           "when": "view == specmesh.docsExplorer",
           "group": "navigation@2"
+        },
+        {
+          "command": "specmesh.clearDocsFilter",
+          "when": "view == specmesh.docsExplorer && specmesh.docsFilterActive",
+          "group": "navigation@3"
+        },
+        {
+          "submenu": "specmesh.docsExplorerActions",
+          "when": "view == specmesh.docsExplorer",
+          "group": "navigation@4"
         }
       ],
       "specmesh.docsExplorerActions": [

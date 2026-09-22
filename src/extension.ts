@@ -56,6 +56,16 @@ export function computeStatusMessage(
   return `${pluralize(docCount, "doc")} · ${missingCount} missing · ${pluralize(brokenLinks, "broken link")} · ${pluralize(orphans, "orphan")}`;
 }
 
+/** Prefixes the status row with the active filter text (FR-017), so it's clear the tree is narrowed rather
+ * than empty of docs. Passes `baseMessage` through unchanged when there's no active filter. */
+export function applyFilterPrefix(baseMessage: string | undefined, filterText: string): string | undefined {
+  if (!filterText) {
+    return baseMessage;
+  }
+  const prefix = `Filter: "${filterText}"`;
+  return baseMessage ? `${prefix} · ${baseMessage}` : prefix;
+}
+
 export function activate(context: vscode.ExtensionContext): void {
   const treeProvider = new DocsTreeProvider();
   const graphViewProvider = new GraphViewProvider();
@@ -69,6 +79,27 @@ export function activate(context: vscode.ExtensionContext): void {
   // Baseline for detecting newly-declared/removed `repos:` entries (FR-014); `undefined` until the first
   // successful crawl, so no clone/delete prompts fire retroactively for drift that predates this session.
   let previousRepos: DeclaredRepo[] | undefined;
+
+  // FR-017 search filter: `lastCounts` is the last crawl-computed missing/broken-link/orphan totals, kept so
+  // the status row can be recomposed with the current filtered doc count without re-crawling.
+  let currentFilter = "";
+  let lastCounts = { missing: 0, brokenLinks: 0, orphans: 0 };
+  const updateStatusMessage = (): void => {
+    const baseMessage = computeStatusMessage(
+      treeProvider.visibleDocCount(),
+      lastCounts.missing,
+      lastCounts.brokenLinks,
+      lastCounts.orphans
+    );
+    treeView.message = applyFilterPrefix(baseMessage, currentFilter);
+  };
+  const setFilter = (text: string): void => {
+    currentFilter = text.trim();
+    treeProvider.setFilter(currentFilter);
+    updateStatusMessage();
+    void vscode.commands.executeCommand("setContext", "specmesh.docsFilterActive", currentFilter !== "");
+  };
+  void vscode.commands.executeCommand("setContext", "specmesh.docsFilterActive", false);
 
   const refresh = async (): Promise<void> => {
     treeView.message = "specmesh: indexing docs\u2026";
@@ -87,7 +118,8 @@ export function activate(context: vscode.ExtensionContext): void {
     const brokenLinks = problems.filter((p) => p.kind === "broken-link").length;
     const orphans = problems.filter((p) => p.kind === "orphan").length;
     const missing = missingProblems.length;
-    treeView.message = computeStatusMessage(nodes.length, missing, brokenLinks, orphans);
+    lastCounts = { missing, brokenLinks, orphans };
+    updateStatusMessage();
 
     outputChannel.appendLine(
       `specmesh: indexed ${nodes.length} docs, ${brokenLinks} broken link(s), ${orphans} orphan(s), ${missing} missing tracked file(s).`
@@ -263,6 +295,17 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand("specmesh.toggleGraphView", async () => {
       viewMode = viewMode === "tree" ? "graph" : "tree";
       await vscode.commands.executeCommand("setContext", "specmesh.viewMode", viewMode);
+    }),
+    vscode.commands.registerCommand("specmesh.filterDocs", () => {
+      const input = vscode.window.createInputBox();
+      input.placeholder = "Filter docs by title or filename\u2026";
+      input.value = currentFilter;
+      input.onDidChangeValue((value) => setFilter(value));
+      input.onDidHide(() => input.dispose());
+      input.show();
+    }),
+    vscode.commands.registerCommand("specmesh.clearDocsFilter", () => {
+      setFilter("");
     }),
     ...registerSpecmeshTools(context, refresh)
   );

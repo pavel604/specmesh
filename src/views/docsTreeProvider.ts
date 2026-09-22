@@ -10,6 +10,16 @@ const MAX_VISIBLE_DOCS_PER_CATEGORY = 10;
 
 type LabelFormat = "title" | "filename" | "both";
 
+/** Case-insensitive substring match against a doc's title or filename -- the same two fields the tree already
+ * renders per `specmesh.docLabelFormat`, not the doc's full markdown body. */
+export function docMatchesFilter(title: string, filename: string, filterText: string): boolean {
+  const needle = filterText.trim().toLowerCase();
+  if (!needle) {
+    return true;
+  }
+  return title.toLowerCase().includes(needle) || filename.toLowerCase().includes(needle);
+}
+
 // "Declared Repos" (repos:) isn't a doc type from getDocTypeDefinitions(), so its category label needs a
 // constant of its own -- must match the categoryLabel crawler.ts uses for repo-manifest Problems.
 const REPO_MANIFEST_TYPE = "repo-manifest";
@@ -42,6 +52,17 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
   // categories the user has chosen to fully expand past the MAX_VISIBLE_DOCS_PER_CATEGORY cap, keyed
   // `${folderName}::${type}` -- persists across refreshes so it doesn't re-collapse on every file watch tick.
   private expandedCategories = new Set<string>();
+  // live search filter (FR-017) -- empty string means "no filter, show everything", matching today's behavior.
+  private filterText = "";
+
+  setFilter(text: string): void {
+    this.filterText = text.trim();
+    this._onDidChangeTreeData.fire();
+  }
+
+  getFilter(): string {
+    return this.filterText;
+  }
 
   update(
     nodes: DocNode[],
@@ -119,6 +140,37 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
     return kids.sort(
       (a, b) => orderIndex(a.type) - orderIndex(b.type) || a.type.localeCompare(b.type) || a.title.localeCompare(b.title)
     );
+  }
+
+  /** A doc is visible under the active filter if it matches directly, or any of its nested children
+   * (recursively) do -- once visible this way, its children still render unfiltered (FR-3). No-op (always
+   * true) when there's no active filter. */
+  private isVisible(node: DocNode): boolean {
+    if (!this.filterText) {
+      return true;
+    }
+    const fileName = node.relativePath.split("/").pop() ?? node.relativePath;
+    if (docMatchesFilter(node.title, fileName, this.filterText)) {
+      return true;
+    }
+    return this.childrenOf(node).some((child) => this.isVisible(child));
+  }
+
+  /** Every nested descendant of `node` renders unconditionally once `node` itself is shown (FR-3), regardless
+   * of whether each descendant individually matches the filter. */
+  private countRenderedDescendants(node: DocNode): number {
+    return this.childrenOf(node).reduce((sum, child) => sum + 1 + this.countRenderedDescendants(child), 0);
+  }
+
+  /** Total tracked docs with no active filter; otherwise the count of docs actually rendered under the
+   * current filter, so the status row's "N docs" reflects what's shown rather than the workspace total. */
+  visibleDocCount(): number {
+    if (!this.filterText) {
+      return this.nodes.length;
+    }
+    return this.nodes
+      .filter((n) => !n.parentId && this.isVisible(n))
+      .reduce((sum, n) => sum + 1 + this.countRenderedDescendants(n), 0);
   }
 
   /** Missing tracked files (error/red) take precedence over broken links (warning/amber) when a folder or
@@ -281,13 +333,22 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
         ...this.missing.map((p) => p.workspaceFolderName).filter((n): n is string => !!n),
         ...this.repos.map((r) => r.workspaceFolderName),
       ]);
-      return [...folderNames].sort().map((folderName) => ({ kind: "folder", folderName }));
+      const visibleFolderNames = this.filterText
+        ? [...folderNames].filter((folderName) =>
+            this.nodes.some((n) => n.workspaceFolderName === folderName && !n.parentId && this.isVisible(n))
+          )
+        : [...folderNames];
+      return visibleFolderNames.sort().map((folderName) => ({ kind: "folder", folderName }));
     }
 
     if (element.kind === "folder") {
       const nodesInFolder = this.nodes.filter((n) => n.workspaceFolderName === element.folderName);
-      const missingInFolder = this.missing.filter((p) => p.workspaceFolderName === element.folderName);
-      const reposInFolder = this.repos.filter((r) => r.workspaceFolderName === element.folderName);
+      // while a filter is active, missing-tracked-file entries and Declared Repos aren't matchable docs, so
+      // they're omitted entirely rather than filtered by title/filename (FR-2).
+      const missingInFolder = this.filterText
+        ? []
+        : this.missing.filter((p) => p.workspaceFolderName === element.folderName);
+      const reposInFolder = this.filterText ? [] : this.repos.filter((r) => r.workspaceFolderName === element.folderName);
 
       // preserve the built-in doc-type order, then append any custom types a repo's .specmesh.yml added
       const categoryLabels = new Map<string, string>();
@@ -309,19 +370,19 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
       }
 
       const presentTypes = new Set([
-        ...nodesInFolder.filter((n) => !n.parentId).map((n) => n.type),
+        ...nodesInFolder
+          .filter((n) => !n.parentId && (!this.filterText || this.isVisible(n)))
+          .map((n) => n.type),
         ...missingInFolder.map((p) => p.docType).filter((t): t is string => !!t),
         ...(reposInFolder.length > 0 ? [REPO_MANIFEST_TYPE] : []),
       ]);
 
-      const configItem: TreeItemData = {
-        kind: "config",
-        folderName: element.folderName,
-        exists: this.configExists.get(element.folderName) ?? false,
-      };
+      const configItem: TreeItemData[] = this.filterText
+        ? []
+        : [{ kind: "config", folderName: element.folderName, exists: this.configExists.get(element.folderName) ?? false }];
 
       return [
-        configItem,
+        ...configItem,
         ...[...categoryLabels.entries()]
           .filter(([type]) => presentTypes.has(type))
           .sort(([typeA], [typeB]) => this.categoryIndex(element.folderName, typeA) - this.categoryIndex(element.folderName, typeB))
@@ -343,7 +404,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
 
       const sortedDocs = sortDocsReverseChronological(
         this.nodes.filter((n) => n.workspaceFolderName === element.folderName && n.type === element.type && !n.parentId)
-      );
+      ).filter((node) => !this.filterText || this.isVisible(node));
       const expanded = this.expandedCategories.has(`${element.folderName}::${element.type}`);
       const visibleDocs = expanded ? sortedDocs : sortedDocs.slice(0, MAX_VISIBLE_DOCS_PER_CATEGORY);
       const docs: TreeItemData[] = visibleDocs.map((node) => ({ kind: "doc", node }));
@@ -358,9 +419,11 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
               },
             ]
           : [];
-      const missing: TreeItemData[] = this.missing
-        .filter((p) => p.workspaceFolderName === element.folderName && p.docType === element.type)
-        .map((problem) => ({ kind: "missing", problem }));
+      const missing: TreeItemData[] = this.filterText
+        ? []
+        : this.missing
+            .filter((p) => p.workspaceFolderName === element.folderName && p.docType === element.type)
+            .map((problem) => ({ kind: "missing", problem }));
       return [...missing, ...docs, ...more];
     }
 
