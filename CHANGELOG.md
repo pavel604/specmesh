@@ -2,6 +2,11 @@
 
 All notable changes to the "specmesh" extension are documented in this file.
 
+## [0.15.0] - 2026-09-22
+
+- Add a live search filter to the Docs Explorer tree; fix `${workspaceFolder}` markdown link resolution
+  false positives.
+
 ## [0.14.0] - 2026-09-21
 
 - Added a Docs Dependency Graph View, toggleable alongside the existing tree view: renders tracked docs as
