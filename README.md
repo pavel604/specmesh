@@ -14,8 +14,9 @@ thing that's missing:
   spec+plan+tasks+walkthrough/reference/instructions/skill docs, browsable in one tree, without
   needing to know each repo's folder layout.
 - **Broken cross-repo link detection** — relative markdown links (e.g. one pointing to
-  `../../../other-repo/docs/FR-002/spec.v1.md`) are resolved against the actual filesystem and
-  reported as VS Code diagnostics (Problems panel) if the target doesn't exist.
+  `../../../other-repo/docs/FR-002/spec.v1.md`), as well as links prefixed with `${workspaceFolder}/`
+  (resolved against the linking doc's own workspace folder root), are resolved against the actual filesystem
+  and reported as VS Code diagnostics (Problems panel) if the target doesn't exist.
 - **Orphan detection** — ADRs/reference docs/FR specs not linked from anywhere else in the graph
   (command: `specmesh: Show Orphaned Docs`).
 - **Missing tracked file detection** — a literal (wildcard-free) `track` entry (e.g. a specific

@@ -8,10 +8,18 @@ import { isLiteralGlob, loadRepoConfig } from "./repoConfig";
 import { attachParentIds, buildChildTypeOrder, flattenDocTypes } from "./docTypeTree";
 import { DeclaredRepo, DocLink, DocNode, Problem } from "../model/types";
 
-function resolveLinkTarget(fromFile: string, target: string): string | null {
+const WORKSPACE_FOLDER_VAR = "${workspaceFolder}";
+
+export function resolveLinkTarget(fromFile: string, target: string, workspaceFolderPath: string): string | null {
   const withoutAnchor = target.split("#")[0];
   if (!withoutAnchor) {
     return null;
+  }
+  if (withoutAnchor === WORKSPACE_FOLDER_VAR) {
+    return path.resolve(workspaceFolderPath);
+  }
+  if (withoutAnchor.startsWith(`${WORKSPACE_FOLDER_VAR}/`)) {
+    return path.resolve(workspaceFolderPath, withoutAnchor.slice(WORKSPACE_FOLDER_VAR.length + 1));
   }
   return path.resolve(path.dirname(fromFile), withoutAnchor);
 }
@@ -144,7 +152,7 @@ export async function crawlWorkspace(): Promise<CrawlResult> {
         const rawLinks = extractMarkdownLinks(content);
 
         const links: DocLink[] = rawLinks.map((raw) => {
-          const resolved = resolveLinkTarget(uri.fsPath, raw.target);
+          const resolved = resolveLinkTarget(uri.fsPath, raw.target, folder.uri.fsPath);
           return {
             text: raw.text,
             rawTarget: raw.target,
