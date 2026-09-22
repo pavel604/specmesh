@@ -10,14 +10,18 @@ const MAX_VISIBLE_DOCS_PER_CATEGORY = 10;
 
 type LabelFormat = "title" | "filename" | "both";
 
-/** Case-insensitive substring match against a doc's title or filename -- the same two fields the tree already
- * renders per `specmesh.docLabelFormat`, not the doc's full markdown body. */
-export function docMatchesFilter(title: string, filename: string, filterText: string): boolean {
+/** Case-insensitive substring match against a doc's title, filename, or full body content -- the same two
+ * fields the tree already renders per `specmesh.docLabelFormat`, plus the raw markdown text (FR-017 v2). */
+export function docMatchesFilter(title: string, filename: string, content: string, filterText: string): boolean {
   const needle = filterText.trim().toLowerCase();
   if (!needle) {
     return true;
   }
-  return title.toLowerCase().includes(needle) || filename.toLowerCase().includes(needle);
+  return (
+    title.toLowerCase().includes(needle) ||
+    filename.toLowerCase().includes(needle) ||
+    content.toLowerCase().includes(needle)
+  );
 }
 
 // "Declared Repos" (repos:) isn't a doc type from getDocTypeDefinitions(), so its category label needs a
@@ -150,7 +154,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<TreeItemData> {
       return true;
     }
     const fileName = node.relativePath.split("/").pop() ?? node.relativePath;
-    if (docMatchesFilter(node.title, fileName, this.filterText)) {
+    if (docMatchesFilter(node.title, fileName, node.content ?? "", this.filterText)) {
       return true;
     }
     return this.childrenOf(node).some((child) => this.isVisible(child));

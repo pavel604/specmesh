@@ -16,19 +16,23 @@ function makeNode(overrides: Partial<DocNode> & Pick<DocNode, "id" | "type" | "t
 
 suite("docMatchesFilter", () => {
   test("matches a title substring case-insensitively", () => {
-    assert.equal(docMatchesFilter("Docs Tree Search Filter", "spec.v1.md", "search"), true);
+    assert.equal(docMatchesFilter("Docs Tree Search Filter", "spec.v1.md", "", "search"), true);
   });
 
   test("matches a filename substring case-insensitively", () => {
-    assert.equal(docMatchesFilter("Some Title", "ADR-005-search.md", "SEARCH"), true);
+    assert.equal(docMatchesFilter("Some Title", "ADR-005-search.md", "", "SEARCH"), true);
+  });
+
+  test("matches a body content substring case-insensitively", () => {
+    assert.equal(docMatchesFilter("Some Title", "file.md", "...uses a Builder pattern...", "builder"), true);
   });
 
   test("does not match unrelated text", () => {
-    assert.equal(docMatchesFilter("Some Title", "ADR-005-search.md", "unrelated"), false);
+    assert.equal(docMatchesFilter("Some Title", "ADR-005-search.md", "nothing relevant here", "unrelated"), false);
   });
 
   test("matches everything when the filter text is empty", () => {
-    assert.equal(docMatchesFilter("Some Title", "file.md", ""), true);
+    assert.equal(docMatchesFilter("Some Title", "file.md", "", ""), true);
   });
 });
 
@@ -109,6 +113,26 @@ suite("DocsTreeProvider filtering", () => {
     provider.setFilter("");
     assert.equal(provider.getFilter(), "");
     assert.equal(provider.getChildren().length, 1);
+  });
+
+  test("matches a doc whose body content (not title/filename) contains the filter text", () => {
+    const node = makeNode({
+      id: "specmesh::docs/adr/ADR-002-something.md",
+      type: "adr",
+      title: "ADR-002: Something Else",
+      relativePath: "docs/adr/ADR-002-something.md",
+      content: "# ADR-002\n\nWe use a Builder pattern here.",
+    });
+    const provider = new DocsTreeProvider();
+    provider.update([node], [], new Map(), new Map(), []);
+
+    provider.setFilter("builder");
+
+    const folderChildren = provider.getChildren(provider.getChildren()[0]);
+    const category = folderChildren.find((c) => c.kind === "category");
+    assert.ok(category, "expected the doc's category to be visible via content match");
+    const docItems = provider.getChildren(category);
+    assert.equal(docItems.length, 1);
   });
 });
 

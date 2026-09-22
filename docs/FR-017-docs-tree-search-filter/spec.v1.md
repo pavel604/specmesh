@@ -1,7 +1,7 @@
 # FR-017: Docs Tree Search Filter
 
 **Revision**: 1
-**Status**: Approved
+**Status**: Superseded by [v2](./spec.v2.md)
 **Repos**: specmesh
 **Created**: 2026-09-22
 **Epic**: [EPIC-001: Docs Explorer Authoring](../epics/EPIC-001-docs-explorer-authoring.md)

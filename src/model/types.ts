@@ -38,6 +38,8 @@ export interface DocNode {
   relativePath: string;
   metadata: Record<string, string>;
   links: DocLink[];
+  /** raw file text as read at crawl time -- used for body-content search matching (FR-017 v2). */
+  content?: string;
   /** copied from the originating DocTypeDefinition.root at crawl time. */
   root?: boolean;
   /** id of the matched parent DocNode (same directory + version token, per the parent type's `children`
