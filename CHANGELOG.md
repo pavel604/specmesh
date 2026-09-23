@@ -2,6 +2,13 @@
 
 All notable changes to the "specmesh" extension are documented in this file.
 
+## [0.16.0] - 2026-09-23
+
+- `/new-feature` and `/change-request` skills now ask before assuming a new epic or a new dependency/technology
+  choice: a missing epic prompts the user rather than silently skipping, and introducing a new package/
+  technology/infrastructure choice gates on writing an ADR or using something already documented.
+- Extracted the epic doc structure into `references/epic-template.md` so new epics follow a consistent shape.
+
 ## [0.15.1] - 2026-09-22
 
 - Docs tree search filter now also matches a doc's body content, not just its title/filename.
