@@ -6,7 +6,12 @@ argument-hint: 'A user story or feature description, e.g. "As a user, I want to.
 
 # New Feature (idea → PR-ready code)
 
-A single, continuous workflow. Once the user invokes this skill with a feature description, drive it all the way through the phases below **in this same session** — do not ask the user to run another command to continue. Only stop at the two explicit approval gates (end of Phase 1, end of Phase 2). Everything else proceeds automatically.
+A single, continuous workflow. Once the user invokes this skill with a feature description, drive it all the way through the phases below **in this same session** — do not ask the user to run another command to continue. Only stop at the explicit gates below: Phase 0's epic ask (when it applies), end of Phase 1 (spec review), the New Dependency gate inside Phase 2 (when it applies), and end of Phase 2 (plan review). Everything else proceeds automatically.
+
+A feature request that arrives already loaded with implementation specifics — a named technology, connection
+strings, config values, etc. — does not shortcut any of this. Treat those specifics as answers to questions you'd
+otherwise have to ask (e.g. they can satisfy the New Dependency gate's decision without asking it again), never as
+permission to skip straight to research/implementation without drafting and gating the spec and plan first.
 
 ## Repo layout for this workspace
 
@@ -26,12 +31,19 @@ Phase 1. Otherwise make the reasonable call and proceed.
 4. Scan `DOCS_DIR` for existing `FR-###-*` folders, take the highest `###`, and use the next sequential number
    (zero-padded to 3 digits) — e.g. `FR-004-claim-notes`. If `docs/` doesn't exist yet, create it and start at
    `FR-001`.
-5. Read `docs/charter.md` and list the epics under `docs/epics/EPIC-###-*.md`. Pick the epic this
-   feature clearly belongs to. If more than one is plausible, or none fit, ask the user once (offer the existing
-   epics plus "new epic" as options) — do not silently guess a cross-cutting theme. If the user asks for a new
-   epic, create `docs/epics/EPIC-<next-num>-<short-name>.md` (same structure as the existing epic docs)
-   before continuing. Purely cross-cutting technical work (auth, project structure, data-access conventions) does
-   not need an epic — only user/business-facing capability work does.
+5. Read `docs/charter.md` and list the epics under `docs/epics/EPIC-###-*.md`. **If that directory doesn't
+   exist yet or has no epics in it, treat that the same as "none fit" below** — a missing/empty epics folder is
+   never by itself proof that this feature is cross-cutting; do not skip the ask on that basis. Pick the epic
+   this feature clearly belongs to. If more than one is plausible, or none fit (including no epics existing at
+   all), ask the user once (offer the existing epics plus "new epic" as options) — do not silently guess a
+   cross-cutting theme. If the user asks for a new epic, create `docs/epics/EPIC-<next-num>-<short-name>.md`
+   using the structure in [references/epic-template.md](references/epic-template.md) (relative to this skill's
+   own folder) — it matches the existing epic docs' convention, so use it as-is even when this is the very
+   first epic in the repo and there's nothing yet to copy. Leave its Stories table empty (just the header row)
+   until this feature's own FR spec is written and its row gets added — don't invent placeholder rows. Purely
+   cross-cutting technical work (auth, project structure, data-access conventions) does not need an epic — only
+   user/business-facing capability work does. Don't let that exemption become a default excuse: if there's any
+   plausible user/business-facing framing, ask rather than silently assuming cross-cutting.
 6. Set `FEATURE_DIR` to `DOCS_DIR/FR-<num>-<short-name>/`. This is revision 1 (`v1`) of the feature. All artifacts
    live in this one folder, suffixed with the revision number:
    - `FEATURE_DIR/spec.v1.md`
@@ -136,14 +148,36 @@ Phase 1. Otherwise make the reasonable call and proceed.
    - <anything worth flagging>
    ```
 
-3. Present the plan to the user (point at `plan.v1.md`).
-4. **Gate.** Use the ask-questions tool: header "Plan Review", question "Approve this implementation plan, or make
+3. If this plan would need a new or different package, technology, or infrastructure component that isn't
+   already used in the repo or documented in an existing ADR, don't decide on it yourself and add it to the plan.
+   "Already used"/"already documented" is a high bar: it means the repo already has a manifest dependency
+   (`package.json`/`*.csproj`/etc.) **and** real integration code that calls it, or an ADR with `Status: Accepted`
+   naming this exact technology. A connection string, endpoint URL, or technology name merely sitting in a
+   `.ini`/`.env`/config sample, a code comment, a scaffold/template file, or the user's own pasted snippet is
+   **not** evidence of prior use — that's exactly the kind of trace this gate exists to catch, not an excuse to
+   skip it. Before treating something as already-used or already-documented, name the specific source file or ADR
+   that proves it; if you can't point to one, run the gate below.
+   **Gate.** Use the ask-questions tool: header "New Dependency", question "This plan needs <name> to <purpose> —
+   write an ADR to document that decision, or use something already in the repo instead?", options `Write an ADR`
+   / `Use something existing` (allow freeform input, e.g. to name a preferred alternative). If the user's original
+   feature request already named this exact technology (e.g. "let's use Cosmos"), that satisfies the decision —
+   skip asking again — but still write the ADR below before presenting the plan; a pre-named technology never
+   skips the ADR itself.
+   - **Write an ADR** → write `docs/adr/ADR-<next-num>-<short-name>.md` (same structure as the existing ADRs:
+     Context, Options Considered, Decision, Consequences) justifying the choice, and reference it from the plan
+     subsection that needs it.
+   - **Use something existing** (or a named alternative) → rework that part of the plan around what the user
+     pointed at instead.
+     Never assume a new package/technology/infrastructure choice unilaterally — only use one the user just approved
+     here, or one already documented in an existing ADR.
+4. Present the plan to the user (point at `plan.v1.md`).
+5. **Gate.** Use the ask-questions tool: header "Plan Review", question "Approve this implementation plan, or make
    changes?", options `Approve` / `Decline` / `Refine` (allow freeform input). Do not proceed on an ordinary chat
    reply — always use this structured prompt.
    - **Approve** → proceed to Phase 3 and start building.
    - **Refine** → treat the freeform text as the requested edits, update `plan.v1.md`, and ask this same gate again.
    - **Decline** → stop here; tell the user the feature is paused with the plan in `Draft` status.
-5. On approval, update the `Status` field in `plan.v1.md` to `Approved`.
+6. On approval, update the `Status` field in `plan.v1.md` to `Approved`.
 
 ## Phase 3 — Tasks
 

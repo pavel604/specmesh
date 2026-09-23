@@ -8,8 +8,9 @@ argument-hint: "Which feature (FR number or folder name) plus what changed/broke
 
 Handles drift on a feature that already has a `FEATURE_DIR` (created by `new-feature`). Every drift event becomes a
 new numbered revision (`v2`, `v3`, ...) inside that same folder — never a new FR folder, never an edit to a prior
-revision's body. Same continuous-session behavior as `new-feature`: don't stop between phases except at the two
-approval gates.
+revision's body. Same continuous-session behavior as `new-feature`: don't stop between phases except at the
+explicit gates — Phase 0's Shipped Check, end of Phase 1 (spec review), the New Dependency gate inside Phase 2
+(when it applies), and end of Phase 2 (plan review).
 
 **Hard rule, checked before anything else below**: a new revision (`v{NEW_REV}`) may only be created for a feature
 that has been committed at least once. If `v{CURRENT_REV}` has never been committed, there is nothing to "revise" —
@@ -107,7 +108,27 @@ being introduced>
 
 Group changes into topic-based `### <Title>` subsections, each opening with a brief functional description
 before its file list. Only explore the code paths implicated by the changed requirements — do not proactively
-re-scan the rest of the codebase for unrelated inconsistencies. Present the plan (point at `plan.v{NEW_REV}.md`).
+re-scan the rest of the codebase for unrelated inconsistencies. If a change would need a new or different
+package, technology, or infrastructure component that isn't already used in the repo or documented in an existing
+ADR, don't decide on it yourself and add it to the plan. "Already used"/"already documented" is a high bar: it
+means the repo already has a manifest dependency (`package.json`/`*.csproj`/etc.) **and** real integration code
+that calls it, or an ADR with `Status: Accepted` naming this exact technology. A connection string, endpoint URL,
+or technology name merely sitting in a `.ini`/`.env`/config sample, a code comment, a scaffold/template file, or
+the user's own pasted snippet is **not** evidence of prior use — that's exactly the kind of trace this gate
+exists to catch, not an excuse to skip it. Before treating something as already-used or already-documented, name
+the specific source file or ADR that proves it; if you can't point to one, run the gate below. **Gate.** Use the
+ask-questions tool: header "New
+Dependency", question "This change needs <name> to <purpose> — write an ADR to document that decision, or use
+something already in the repo instead?", options `Write an ADR` / `Use something existing` (allow freeform input,
+e.g. to name a preferred alternative).
+
+- **Write an ADR** → write `docs/adr/ADR-<next-num>-<short-name>.md` (same structure as the existing ADRs)
+  justifying the choice, and reference it from the relevant subsection.
+- **Use something existing** (or a named alternative) → rework that part of the plan around what the user pointed
+  at instead.
+
+Never assume a new package/technology/infrastructure choice unilaterally — only use one the user just approved
+here, or one already documented in an existing ADR. Present the plan (point at `plan.v{NEW_REV}.md`).
 
 **Gate.** Use the ask-questions tool: header "Plan Review", question "Approve this migration plan, or make changes?",
 options `Approve` / `Decline` / `Refine` (allow freeform input). Do not proceed on an ordinary chat reply — always

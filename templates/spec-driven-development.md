@@ -50,6 +50,10 @@ duplicating.
 - **ADRs are immutable once Accepted.** If a decision changes, write a new ADR stating `Supersedes ADR-NNN` in
   its Context, and only flip the old ADR's `Status` line to `Superseded by ADR-MMM` — never rewrite its body. This
   mirrors how `/change-request` already treats FR spec revisions.
+- **Never assume a new or different package, technology, or infrastructure choice.** If a plan step in
+  `/new-feature` or `/change-request` would need one that isn't already used in the repo or documented in an
+  existing ADR, ask the user first — offer to write an ADR justifying it, or use something already in the repo
+  instead — rather than deciding unilaterally. See those skills' Phase 2 gate for the mechanics.
 - **Charter and Epic docs are living documents, not versioned files** — no `v1`/`v2` file-per-revision like FRs.
   Edit them in place, but record every _material_ change (scope shift, dependency swap, a cited ADR getting
   superseded, etc.) as one dated bullet in a `## Changelog` section at the bottom. Routine story-completion

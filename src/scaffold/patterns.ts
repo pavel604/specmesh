@@ -57,6 +57,11 @@ export const BUILTIN_PACK_DATA: Omit<PatternPack, "readTemplate"> = {
     },
     { src: "copilot-instructions.md", dest: ".github/copilot-instructions.md", scope: "perRepo" },
     { src: "skills/new-feature/SKILL.md", dest: ".github/skills/new-feature/SKILL.md", scope: "perRepo" },
+    {
+      src: "skills/new-feature/references/epic-template.md",
+      dest: ".github/skills/new-feature/references/epic-template.md",
+      scope: "perRepo",
+    },
     { src: "skills/change-request/SKILL.md", dest: ".github/skills/change-request/SKILL.md", scope: "perRepo" },
   ],
   ensureDirs: [
