@@ -65,3 +65,9 @@ built-in `assert/strict` for assertions (no extra assertion library).
   follow-up, not part of this decision.
 - Future FR plans that touch tested modules should add/update tests as part of their own implementation
   (per each skill's Phase 4 "follow this workspace's existing conventions"), not via a separate testing skill.
+- 2026-09-25: Added a `test:coverage` script (`vscode-test --coverage`, built into `@vscode/test-cli` — no
+  separate `nyc`/`c8` devDependency needed) and gitignored `coverage/`. No coverage threshold is enforced yet;
+  this only makes the number visible on demand. As of this addition: 53% statements/lines, 84% branches, 47%
+  functions overall — pure-logic modules (`frontMatter.ts`, `graph.ts`, `linkExtractor.ts`, `docTypesCore.ts`)
+  are at/near 100%, while `vscode`-heavy modules (`scaffold/*`, `views/graphViewProvider.ts`, `git/*`) are
+  lowest, consistent with this ADR's original coverage-priority ordering above.

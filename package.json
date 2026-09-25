@@ -550,7 +550,8 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "tsc -p ./",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "test:coverage": "tsc -p ./ && vscode-test --coverage --coverage-reporter text --coverage-reporter html"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
