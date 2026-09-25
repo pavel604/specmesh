@@ -152,6 +152,33 @@ Agent mode will also call these on its own when relevant — e.g. asking Copilot
 links in this workspace" or "start tracking `docs/runbooks/*.md` in this repo" needs no `#`-mention at
 all.
 
+## Standalone MCP server (non-VS-Code agent harnesses)
+
+The same 8 tools are also available outside VS Code Copilot Chat, as a standalone
+[Model Context Protocol](https://modelcontextprotocol.io) server over stdio — for any other MCP-capable
+agent harness. It doesn't require the VS Code extension to be running/activated.
+
+Run it directly (after `npm install` in this repo):
+
+```sh
+node out/mcpServer/server.js <path-to-repo>[=<name>] [<path-to-repo>[=<name>] ...]
+```
+
+Each argument is a workspace root to crawl, given as a path (name defaults to its folder name) or
+`path=name` to set the name explicitly (matters for `folder` filters and cross-repo doc ids). Example MCP
+host config entry (e.g. a `.mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "specmesh": {
+      "command": "node",
+      "args": ["/absolute/path/to/specmesh/out/mcpServer/server.js", "/absolute/path/to/your-repo"]
+    }
+  }
+}
+```
+
 ## Change tracking / diffs — design notes (not yet built)
 
 specmesh deliberately doesn't reinvent git for this:

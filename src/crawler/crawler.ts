@@ -1,45 +1,14 @@
 import * as vscode from "vscode";
-import * as fs from "fs";
 import * as path from "path";
 import { parseFrontMatter } from "./frontMatter";
 import { extractMarkdownLinks } from "./linkExtractor";
 import { getDocTypeDefinitions } from "./docTypes";
 import { isLiteralGlob, loadRepoConfig } from "./repoConfig";
 import { attachParentIds, buildChildTypeOrder, flattenDocTypes } from "./docTypeTree";
+import { existsSafe, resolveLinkTarget, withSpecmeshExclude } from "./docPaths";
 import { DeclaredRepo, DocLink, DocNode, Problem } from "../model/types";
 
-const WORKSPACE_FOLDER_VAR = "${workspaceFolder}";
-
-export function resolveLinkTarget(fromFile: string, target: string, workspaceFolderPath: string): string | null {
-  const withoutAnchor = target.split("#")[0];
-  if (!withoutAnchor) {
-    return null;
-  }
-  if (withoutAnchor === WORKSPACE_FOLDER_VAR) {
-    return path.resolve(workspaceFolderPath);
-  }
-  if (withoutAnchor.startsWith(`${WORKSPACE_FOLDER_VAR}/`)) {
-    return path.resolve(workspaceFolderPath, withoutAnchor.slice(WORKSPACE_FOLDER_VAR.length + 1));
-  }
-  return path.resolve(path.dirname(fromFile), withoutAnchor);
-}
-
-function existsSafe(target: string): boolean {
-  try {
-    return fs.existsSync(target);
-  } catch {
-    return false;
-  }
-}
-
-/** Merges `.specmesh/**` (the central doc-tracking repo's own storage) into a doc type's `exclude` list,
- * de-duplicating if it's already present. Ensures `.specmesh/spec.git`'s contents are never themselves
- * matched as a tracked doc, even by a broad custom glob like `**\/*.md`. */
-export function withSpecmeshExclude(exclude?: string[]): string[] {
-  const merged = new Set(exclude ?? []);
-  merged.add(".specmesh/**");
-  return [...merged];
-}
+export { resolveLinkTarget, withSpecmeshExclude } from "./docPaths";
 
 export interface CrawlResult {
   nodes: DocNode[];
