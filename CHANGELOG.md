@@ -2,6 +2,12 @@
 
 All notable changes to the "specmesh" extension are documented in this file.
 
+## [0.17.0] - 2026-09-25
+
+- Add harness-agnostic MCP abstraction: a standalone MCP server (`out/mcpServer/server.js`) exposing the same
+  8 doc-graph tools (list docs, find broken links/orphans/missing docs, get doc links, list repos, update
+  track entry, get help) to any MCP-aware agent harness (e.g. Claude Code), not just GitHub Copilot Chat.
+
 ## [0.16.0] - 2026-09-23
 
 - `/new-feature` and `/change-request` skills now ask before assuming a new epic or a new dependency/technology
