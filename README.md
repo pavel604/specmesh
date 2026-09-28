@@ -179,7 +179,54 @@ host config entry (e.g. a `.mcp.json`):
 }
 ```
 
-## Change tracking / diffs — design notes (not yet built)
+### Self-hosted remote server (Streamable HTTP + container)
+
+The same server can also run as a self-hosted container over the MCP
+[Streamable HTTP](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#streamable-http)
+transport, for remote/multi-user agent harnesses (Claude Code, other IDEs) that can't spawn a local stdio
+process. specmesh only *validates* bearer tokens issued by whatever OAuth 2.1 IdP you already run — it is
+never an authorization server and never issues or exchanges tokens itself.
+
+Env vars (all required except the last):
+
+| Env var                        | Purpose                                                                 |
+| ------------------------------- | ------------------------------------------------------------------------ |
+| `SPECMESH_MCP_TRANSPORT`        | Set to `http` to enable this transport (default is stdio).               |
+| `SPECMESH_MCP_PORT`             | Port to listen on (default `3000`).                                      |
+| `SPECMESH_OAUTH_ISSUER`         | Expected `iss` claim — your IdP's issuer URL.                            |
+| `SPECMESH_OAUTH_JWKS_URL`       | Your IdP's JWKS endpoint, used to verify token signatures.                |
+| `SPECMESH_OAUTH_AUDIENCE`       | Expected `aud` claim for this server.                                    |
+| `SPECMESH_OAUTH_REQUIRED_ROLE`  | Optional. If set, a valid token missing this value in its `roles` claim is rejected (`403`). |
+
+Build and run the container (root repo path(s) are supplied via a mounted volume — the image never bakes
+in or clones a checkout):
+
+```sh
+docker build -t specmesh-mcp .
+docker run -p 3000:3000 \
+  -v /host/path/to/your-repo:/repos/myrepo \
+  -e SPECMESH_OAUTH_ISSUER="https://your-idp.example.com/" \
+  -e SPECMESH_OAUTH_JWKS_URL="https://your-idp.example.com/.well-known/jwks.json" \
+  -e SPECMESH_OAUTH_AUDIENCE="api://specmesh" \
+  specmesh-mcp /repos/myrepo
+```
+
+Example remote MCP client config, pointing at the resulting URL with a bearer token from your IdP:
+
+```json
+{
+  "mcpServers": {
+    "specmesh": {
+      "url": "https://your-host.example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer <token>"
+      }
+    }
+  }
+}
+```
+
+
 
 specmesh deliberately doesn't reinvent git for this:
 

@@ -14,6 +14,7 @@ maintained implementation that risks drifting from the Copilot-facing tools.
 
 | FR  | Title | Status |
 | --- | ----- | ------ |
+| [FR-020](../FR-020-remote-mcp-container/spec.v1.md) | Self-Hosted Remote MCP Server (Container Distribution) | Done |
 
 ## Dependencies
 
@@ -25,4 +26,5 @@ maintained implementation that risks drifting from the Copilot-facing tools.
 
 ## Changelog
 
+- 2026-09-28: FR-020 (self-hosted remote MCP server, Streamable HTTP + OAuth 2.1 + container) done.
 - 2026-09-24: Epic created.

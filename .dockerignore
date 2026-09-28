@@ -1,0 +1,13 @@
+.git
+.vscode
+.vscode-test
+node_modules
+out
+coverage
+media
+docs
+templates
+*.md
+!README.md
+.dockerignore
+Dockerfile

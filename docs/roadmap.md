@@ -136,6 +136,42 @@ Eventual TODO's:
   preserves history instead.
 
 
+## Vector 4 — Self-hosted remote MCP server (container distribution)
+
+**Goal:** upgrade specmesh from "a tool other products' teams install as a VS Code extension" to "a kernel other
+products' agentic SDLC can reach regardless of IDE" — without specmesh becoming a hosted SaaS/index. Each
+consumer still self-hosts against their own checked-out repos; only the transport/distribution changes.
+
+- **Not this repo's own dev-process automation.** This vector is about upgrading the specmesh *product* so other
+  products can consume it — it is orthogonal to whether specmesh's own repo uses Copilot coding agent/Actions for
+  its own releases (that's ordinary release engineering, not a roadmap item).
+- **Add a Streamable HTTP transport** alongside FR-019's existing stdio transport, on the exact same
+  `McpServer`/query core — additive, per [ADR-003](adr/ADR-003-mcp-server-sdk.md)'s explicit stdio-only scope
+  note. No behavior divergence between transports; same parity concern as Vector 1's point 3.
+- **Auth**: gate the HTTP transport with OAuth 2.1 (MCP spec's expected remote-auth model) since it's now
+  reachable off-machine, unlike the stdio transport's implicit local-process trust.
+- **Second distribution artifact**: package the HTTP-transport server as a standalone container image (in
+  addition to the existing VSIX), so a consumer without VS Code can run it in their own infrastructure, pointed at
+  their own repo checkout — same local-filesystem-crawl model as today, just not requiring VS Code as the host
+  process.
+- **Consumers self-host, we don't.** specmesh never clones or holds a third party's repos itself — each consumer
+  runs the container against their own checkout (dev machine, CI runner, or their own always-on host). This keeps
+  the charter's "not a hosted/cloud index" non-goal intact while still solving the non-VS-Code-consumer gap.
+- **Relationship to Vector 1**: this is the concrete container-hosting half of Vector 1's "extract an MCP server"
+  bullet — Vector 1 covers the harness-adapter/skill-portability side, this vector covers the transport/hosting
+  side once a harness needs to reach specmesh remotely instead of via a locally-spawned stdio process.
+
+## Vector 5 — Managed cloud deployment + GitHub-hosted agents (idea, not scoped)
+
+FR-020 proved the container/OAuth transport works self-hosted (including against a real Azure AD tenant), but
+also surfaced that GitHub Copilot Chat's org-level MCP policy can block a client harness outright — self-hosting
+alone doesn't guarantee every harness can reach it. Worth exploring later, not yet scoped as an FR:
+
+- Deploying the FR-020 container into a real Azure resource group (e.g. Container Apps) instead of only
+  documenting a local `docker run`, so the server has a stable, always-on URL.
+- Whether/how GitHub-hosted cloud agents (Copilot coding agent, Actions-triggered agents, etc.) could reach that
+  deployed server as MCP clients, as a cross-repo/cross-harness agentic-SDLC entry point.
+
 ## Open questions
 
 - Antigravity's real extension/config model — needs research before designing its harness adapter.
@@ -145,8 +181,12 @@ Eventual TODO's:
 ## Next steps
 
 - Turn Vector 1 and Vector 2 into epic(s)/FR(s) via the `new-feature` workflow.
+- Turn Vector 4 into an FR under EPIC-004 (Multi-Harness Agent Support) via the `new-feature` workflow.
 
 ## Changelog
 
+- 2026-09-28: FR-020 shipped (Vector 4 implemented). Added Vector 5 (managed cloud deployment + GitHub-hosted
+  agents, idea only — prompted by FR-020 testing hitting a Copilot org policy blocking MCP in VS Code).
+- 2026-09-25: Added Vector 4 (self-hosted remote MCP server over Streamable HTTP, container distribution).
 - 2026-09-16: Added Vector 3 (declarative `repos:` manifest & auto-clone).
 - 2026-09-14: Initial roadmap drafted from brainstorming session.
