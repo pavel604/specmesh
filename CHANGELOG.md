@@ -2,6 +2,12 @@
 
 All notable changes to the "specmesh" extension are documented in this file.
 
+## [0.18.0] - 2026-09-28
+
+- Add HTTP support to MCP server: a Streamable HTTP transport alongside the existing stdio transport, gated by
+  OAuth 2.1 bearer-token verification, plus a standalone container image so specmesh's MCP server can be
+  self-hosted and reached remotely by any MCP-aware harness (FR-020).
+
 ## [0.17.0] - 2026-09-25
 
 - Add harness-agnostic MCP abstraction: a standalone MCP server (`out/mcpServer/server.js`) exposing the same
