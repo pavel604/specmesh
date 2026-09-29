@@ -149,10 +149,15 @@ automatically to Phase 4** — no gate.
 
 ## Phase 4 — Implementation
 
-1. Execute `tasks.v{NEW_REV}.md` in order, strictly scoped to what the migration plan named. If you notice unrelated
-   issues while in these files, mention them to the user afterward rather than fixing them silently.
-2. Check for build errors after edits and fix before moving on.
-3. Mark tasks `[x]` as they complete. Do not commit or push.
+For each task in `tasks.v{NEW_REV}.md`, in order:
+
+1. Implement it, strictly scoped to what the migration plan named. If you notice unrelated issues while in
+   these files, mention them to the user afterward rather than fixing them silently.
+2. Check for build errors and fix before moving on.
+3. Mark the task `[x]` and save the file immediately — before starting the next task, not batched at the end,
+   so an interrupted session leaves a clear on-disk record of the last completed task.
+
+Do not commit or push.
 
 ## Phase 5 — Review walkthrough
 

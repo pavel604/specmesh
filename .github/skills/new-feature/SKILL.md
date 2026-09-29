@@ -196,15 +196,19 @@ Phase 1. Otherwise make the reasonable call and proceed.
 
 ## Phase 4 — Implementation
 
-1. Execute the tasks in `tasks.v1.md` in order using normal editing tools. Follow this workspace's existing
-   conventions (matching any relevant `.instructions.md` files, existing patterns in neighboring files, etc.).
-   Consult `plan.v1.md` for the approved approach.
-2. Keep changes surgical — only what the task requires.
-3. Check for build errors after edits and fix them before moving to the next task.
-4. Mark each task `[x]` in `tasks.v1.md` as it completes.
-5. Do not commit or push — leave the working tree for the user to review and commit themselves.
-6. This phase may be re-entered from Phase 5 with newly appended fix tasks (see below) — that's expected and is
-   still v1 work, not a new revision.
+For each task in `tasks.v1.md`, in order:
+
+1. Implement it using normal editing tools. Follow this workspace's existing conventions (matching any relevant
+   `.instructions.md` files, existing patterns in neighboring files, etc.) and the approach approved in
+   `plan.v1.md`. Keep changes surgical — only what the task requires.
+2. Check for build errors and fix them before moving on.
+3. Mark the task `[x]` in `tasks.v1.md` and save the file immediately — before starting the next task, not
+   batched at the end. This keeps `tasks.v1.md` a live, on-disk record of exactly how far implementation got, so
+   an interrupted/disconnected session leaves clear evidence of the last completed task instead of silence.
+
+Do not commit or push — leave the working tree for the user to review and commit themselves. This phase may be
+re-entered from Phase 5 with newly appended fix tasks (see below) — that's expected and is still v1 work, not a
+new revision.
 
 ## Phase 5 — Review Walkthrough (loop until it actually works)
 
